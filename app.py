@@ -4,7 +4,7 @@ from routers import api_blueprint
 
 app=Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Aidana2007@localhost:5432/Ключи'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://aituproject_user:b1KUlQGvxriUeBBnX3CMWGPeEcBRRziy@dpg-cvrk5g8gjchc73bbksq0-a.frankfurt-postgres.render.com/aituproject'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 app.register_blueprint(api_blueprint)
