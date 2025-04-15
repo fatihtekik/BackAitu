@@ -1,0 +1,496 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+body{
+    margin: 0 auto; /* Центрирование страницы */
+}
+.sidebar-container {
+    /* w-56: ширина 14rem (224px) */
+    /* bg-white: белый фон */
+    /* p-5: внутренние отступы 1.25rem (20px) */
+    /* shadow-md: тень средней интенсивности */
+}
+div{
+    font-family: "Roboto", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100;
+    color: black;
+}
+h2{
+    color: black;
+    font-size: 1 rem; 
+    margin: 0; 
+    padding: 5px;
+    font-family: "Roboto", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100; 
+    font-weight: 500; 
+}
+.main-content {
+    display: flex;
+    flex: 1;
+}
+
+/* История ключей - отдельный класс */
+.key-history-container {
+    background-color: white;
+    border-radius: 0.5rem; /* rounded-lg */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow */
+    padding: 1.75rem; /* p-7 */
+    width: 100%;
+}
+
+.key-history-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem; /* mb-6 */
+    font-family: "Roboto", sans-serif;
+    border-bottom: 1px solid #e5e7eb; /* border-b border-gray-200 */
+    padding-bottom: 0.75rem; /* pb-3 */
+}
+
+.key-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* space-y-6 */
+}
+
+.key-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem; /* p-3 */
+    border-radius: 0.5rem; /* rounded-lg */
+    transition: background-color 150ms ease; /* transition-colors */
+}
+
+.key-history-item:hover {
+    background-color: #f9fafb; /* hover:bg-gray-50 */
+}
+
+.key-history-key-info {
+    display: flex;
+    align-items: center;
+}
+
+.key-history-key-name {
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500; /* font-medium */
+    margin-right: 1rem; /* mr-4 */
+}
+
+.key-history-user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* space-x-3 */
+}
+
+.key-history-username {
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500; /* font-medium */
+}
+
+.key-history-status {
+    padding: 0.25rem 0.75rem; /* py-1 px-3 */
+    font-size: 0.75rem; /* text-xs */
+    color: white;
+    border-radius: 0.375rem; /* rounded-md */
+    font-weight: 500;
+}
+
+.status-confirmed {
+    background-color: #3b82f6; /* bg-blue-500 */
+}
+
+.status-confirmed:hover {
+    background-color: #2563eb; /* hover:bg-blue-600 */
+}
+
+.status-pending {
+    background-color: #f59e0b; /* bg-yellow-500 */
+}
+
+.status-pending:hover {
+    background-color: #d97706; /* hover:bg-yellow-600 */
+}
+
+.status-cancelled {
+    background-color: #ef4444; /* bg-red-500 */
+}
+
+.status-cancelled:hover {
+    background-color: #dc2626; /* hover:bg-red-600 */
+}
+
+/* Хедер */
+.header {
+    /* bg-white: белый фон */
+    /* shadow-sm: легкая тень */
+    /* p-5: внутренние отступы 1.25rem (20px) */
+}
+
+/* Поле поиска */
+.search-input {
+    /* w-full: полная ширина родителя */
+    /* pl-10: отступ слева 2.5rem (40px) для иконки */
+    /* pr-4: отступ справа 1rem (16px) */
+    /* py-2: отступы сверху и снизу 0.5rem (8px) */
+    /* rounded-lg: скругление углов */
+    /* border border-gray-300: серая граница */
+    /* focus:outline-none: убирает обводку при фокусе */
+    /* focus:ring-2: добавляет кольцо при фокусе */
+    /* focus:ring-blue-500: синий цвет кольца при фокусе */
+}
+
+/* Карточки */
+.card {
+    background-color: white;
+    width: 100%;
+    padding: 1.25rem; /* Reduced from 1.75rem */
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    margin-bottom: 0.75rem; /* Reduced from 1rem */
+    display: flex;
+    flex-direction: column;
+    margin-top: 1rem; /* Added margin-top for spacing */
+}
+
+.card h2 {
+    margin-bottom: 1rem; /* Reduced from 1.5rem */
+}
+
+.card > div:not(:last-child) {
+    margin-bottom: 0.75rem; /* Reduced from 1rem */
+}
+
+/* Иконка показателя */
+.stat-icon {
+    /* p-4: внутренние отступы 1rem (16px) */
+    /* rounded-full: круглая форма */
+    /* mr-5: отступ справа 1.25rem (20px) */
+    /* Разные цвета фона: bg-yellow-100, bg-blue-100, bg-green-100 */
+    /* Разные цвета иконок: text-yellow-500, text-blue-500, text-green-500 */
+}
+
+/* Таблицы */
+.table-header {
+    /* py-3: отступы сверху и снизу 0.75rem (12px) */
+    /* text-left: выравнивание текста по левому краю */
+    /* text-xs: маленький размер шрифта */
+    /* font-medium: средняя жирность шрифта */
+    /* text-gray-500: серый цвет текста */
+    /* uppercase: все заглавные буквы */
+    /* tracking-wider: увеличенный межбуквенный интервал */
+}
+
+.table-cell {
+    /* py-3: отступы сверху и снизу 0.75rem (12px) */
+    /* whitespace-nowrap: текст не переносится */
+}
+
+/* Кнопки */
+.button-confirm {
+    /* px-3: отступы слева и справа 0.75rem (12px) */
+    /* py-1: отступы сверху и снизу 0.25rem (4px) */
+    /* bg-green-500: зеленый фон */
+    /* text-xs: маленький размер шрифта */
+    /* text-white: белый текст */
+    /* rounded-md: скругление углов */
+    /* hover:bg-green-600: темно-зеленый фон при наведении */
+}
+
+.button-cancel {
+    /* px-3: отступы слева и справа 0.75rem (12px) */
+    /* py-1: отступы сверху и снизу 0.25rem (4px) */
+    /* bg-red-500: красный фон */
+    /* text-xs: маленький размер шрифта */
+    /* text-white: белый текст */
+    /* rounded-md: скругление углов */
+    /* hover:bg-red-600: темно-красный фон при наведении */
+}
+
+/* Элементы истории */
+.history-item {
+    /* flex: флексбокс для горизонтального расположения */
+    /* justify-between: элементы по краям */
+    /* items-center: центрирование по вертикали */
+    /* p-3: внутренние отступы 0.75rem (12px) */
+    /* hover:bg-gray-50: светло-серый фон при наведении */
+    /* rounded-lg: скругление углов */
+    /* transition-colors: плавный переход цветов */
+}
+
+/* Анимации и переходы */
+.hover-transition {
+    /* transition-duration-300: длительность перехода 300мс */
+    /* hover:scale-105: увеличение масштаба при наведении */
+}
+
+/* Добавляем новые стили для модального окна со списком ключей */
+.key-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.key-modal {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+.key-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.75rem;
+}
+
+.key-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.key-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.key-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.key-item-available {
+    border-left: 4px solid #10b981; /* green-500 */
+}
+
+.key-item-issued {
+    border-left: 4px solid #ef4444; /* red-500 */
+}
+
+.key-item-icon {
+    margin-right: 0.75rem;
+    color: #6b7280; /* gray-500 */
+}
+
+.key-item-content {
+    flex: 1;
+}
+
+.key-item-name {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.key-item-status {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 9999px;
+    display: inline-block;
+}
+
+.key-item-status-available {
+    background-color: #d1fae5; /* green-100 */
+    color: #047857; /* green-700 */
+}
+
+.key-item-status-issued {
+    background-color: #fee2e2; /* red-100 */
+    color: #b91c1c; /* red-700 */
+}
+
+.key-item-user {
+    font-size: 0.75rem;
+    color: #6b7280; /* gray-500 */
+    margin-top: 0.25rem;
+}
+
+/* Key confirmation styles */
+.key-approval-container {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.key-approval-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.75rem;
+}
+
+.key-approval-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.key-approval-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.key-approval-item:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.key-approval-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.key-approval-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    justify-content: flex-end;
+}
+
+.approval-button {
+    font-family: "Roboto", sans-serif;
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.approve-button {
+    background-color: #10b981; /* green-500 */
+    color: white;
+}
+
+.approve-button:hover {
+    background-color: #059669; /* green-600 */
+}
+
+.reject-button {
+    background-color: #ef4444; /* red-500 */
+    color: white;
+}
+
+.reject-button:hover {
+    background-color: #dc2626; /* red-600 */
+}
+
+.hold-button {
+    background-color: #f59e0b; /* yellow-500 */
+    color: white;
+}
+
+.hold-button:hover {
+    background-color: #d97706; /* yellow-600 */
+}
+
+.verify-button {
+    background-color: #3b82f6; /* blue-500 */
+    color: white;
+}
+
+.verify-button:hover {
+    background-color: #2563eb; /* blue-600 */
+}
+
+.comment-field {
+    width: 100%;
+    padding: 0.5rem;
+    margin-top: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    font-family: "Roboto", sans-serif;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.comment-field:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.status-pending-verification {
+    background-color: #60a5fa; /* blue-400 */
+}
+
+.status-pending-verification:hover {
+    background-color: #3b82f6; /* blue-500 */
+}
+
+.status-on-hold {
+    background-color: #fbbf24; /* yellow-400 */
+}
+
+.status-on-hold:hover {
+    background-color: #f59e0b; /* yellow-500 */
+}
+
+/* Status badge */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badge-approved {
+    background-color: #d1fae5; /* green-100 */
+    color: #047857; /* green-700 */
+}
+
+.badge-rejected {
+    background-color: #fee2e2; /* red-100 */
+    color: #b91c1c; /* red-700 */
+}
+
+.badge-pending {
+    background-color: #f3f4f6; /* gray-100 */
+    color: #4b5563; /* gray-600 */
+}
+
+.badge-pending-verification {
+    background-color: #dbeafe; /* blue-100 */
+    color: #1d4ed8; /* blue-700 */
+}
+
+.badge-on-hold {
+    background-color: #fef3c7; /* yellow-100 */
+    color: #92400e; /* yellow-700 */
+}

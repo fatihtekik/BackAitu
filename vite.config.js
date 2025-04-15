@@ -20,4 +20,8 @@ export default defineConfig({
     // опционально: явно указываем PostCSS‑конфиг
     postcss: path.resolve(__dirname, 'postcss.config.cjs'),
   },
+  server: {
+    host: true, // сервер будет доступен по IP-адресу
+    port: 3000  // (опционально) указание порта
+  }
 })
