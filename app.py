@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)  
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://aituproject_user:b1KUlQGvxriUeBBnX3CMWGPeEcBRRziy@dpg-cvrk5g8gjchc73bbksq0-a/aituproject'
-'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 app.register_blueprint(api_blueprint)
