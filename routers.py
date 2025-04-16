@@ -106,3 +106,45 @@ def get_key_history():
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+   #список ключей конкретного пользователя
+@api_blueprint.route('/my-keys', methods=['GET'])
+@cross_origin()
+def my_keys():
+    try:
+        user_id_str = request.args.get('user_id')
+        if not user_id_str:
+            return jsonify({"status": "error", "message": "user_id is required"}), 400
+       
+        user_id = int(user_id_str)
+        issued_keys = Key.query.filter_by(status=False).all()
+        keys_list = []
+
+        for key_obj in issued_keys:
+            last_history = KeyHistory.query \
+                .filter_by(key_id=key_obj.id) \
+                .order_by(KeyHistory.timestamp.desc()) \
+                .first()
+
+            if last_history and last_history.user_id == user_id:
+                # Значит этот ключ сейчас у данного пользователя
+                user_name = last_history.user.fio if last_history.user else None
+                
+                keys_list.append({
+                    "id": key_obj.id,
+                    "cab": key_obj.cab,
+                    "corpus": key_obj.corpus,
+                    "status": key_obj.status,      # False = выдан
+                    "available": key_obj.status,   
+                    "last_user": user_name,
+                    "key_name": f"{key_obj.corpus}.{key_obj.cab}"
+                })
+
+        return jsonify({
+            "status": "success",
+            "keys": keys_list
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
