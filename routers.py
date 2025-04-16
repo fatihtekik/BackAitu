@@ -148,3 +148,160 @@ def my_keys():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@api_blueprint.route('/request-key', methods=['POST'])
+@cross_origin()
+def request_key():
+    
+    data = request.get_json()
+    user_id = data.get("user_id")
+    key_id = data.get("key_id")
+
+    user = Users.query.get(user_id)
+    key_obj = Key.query.get(key_id)
+    if not user or not key_obj:
+        return jsonify({"status": "error", "message": "Invalid user_id or key_id"}), 400
+
+    if key_obj.status == False:
+        return jsonify({"status":"error","message":"Ключ уже выдан"}), 400
+
+    new_hist = KeyHistory(
+        user_id=user_id,
+        key_id=key_id,
+        action="request"
+    )
+    db.session.add(new_hist)
+    db.session.commit()
+
+    return jsonify({"status":"success","message":"Запрос на получение ключа отправлен"}),200
+
+
+@api_blueprint.route('/pending-requests', methods=['GET'])
+@cross_origin()
+def pending_requests():
+   
+    try:
+        records = KeyHistory.query.filter_by(action="request").order_by(KeyHistory.timestamp.desc()).all()
+        result = []
+        for r in records:
+            user_name = r.user.fio if r.user else "??"
+            key_name = f"{r.used_key.corpus}.{r.used_key.cab}" if r.used_key else "??"
+            result.append({
+                "history_id": r.id,
+                "user_id": r.user_id,
+                "user_name": user_name,
+                "key_id": r.key_id,
+                "key_name": key_name,
+                "timestamp": r.timestamp.strftime("%d.%m.%Y %H:%M")
+            })
+        return jsonify({"status":"success","requests":result}),200
+    except Exception as e:
+        return jsonify({"status":"error","message":str(e)}),500
+
+
+@api_blueprint.route('/approve-request', methods=['POST'])
+@cross_origin()
+def approve_request():
+   
+    data = request.get_json()
+    hist_id = data.get("history_id")
+
+    record = KeyHistory.query.get(hist_id)
+    if not record:
+        return jsonify({"status":"error","message":"No such request"}),404
+
+    if record.action != "request":
+        return jsonify({"status":"error","message":"This history is not 'request'"}),400
+
+    # Выдаём ключ
+    record.action = "issue"
+    if record.used_key:
+        record.used_key.status = False  # ключ выдан
+    db.session.commit()
+
+    return jsonify({"status":"success","message":"Ключ выдан"}),200
+
+
+@api_blueprint.route('/deny-request', methods=['POST'])
+@cross_origin()
+def deny_request():
+    data = request.get_json()
+    hist_id = data.get("history_id")
+
+    record = KeyHistory.query.get(hist_id)
+    if not record:
+        return jsonify({"status":"error","message":"No such request"}),404
+
+    if record.action != "request":
+        return jsonify({"status":"error","message":"This history is not 'request'"}),400
+
+    record.action = "denied"
+    db.session.commit()
+
+    return jsonify({"status":"success","message":"Запрос отклонён"}),200
+
+
+@api_blueprint.route('/return-key', methods=['POST'])
+@cross_origin()
+def return_key():
+    """
+    Пользователь сдает ключ (action='return'), меняем key.status=True
+    {
+      "user_id":7,
+      "key_id":15
+    }
+    """
+    data = request.get_json()
+    user_id = data.get("user_id")
+    key_id = data.get("key_id")
+
+    # Найдём последнюю запись, удостоверимся, что ключ действительно у user_id
+    from sqlalchemy import desc
+    last_record = KeyHistory.query \
+        .filter_by(key_id=key_id) \
+        .order_by(KeyHistory.timestamp.desc()) \
+        .first()
+
+    if not last_record or last_record.user_id != user_id or last_record.action != "issue":
+        return jsonify({"status":"error","message":"Этот ключ сейчас не у вас"}),400
+
+    new_hist = KeyHistory(
+        user_id=user_id,
+        key_id=key_id,
+        action="return"
+    )
+    db.session.add(new_hist)
+    key_obj = last_record.used_key
+    if key_obj:
+        key_obj.status = True
+
+    db.session.commit()
+    return jsonify({"status":"success","message":"Ключ сдан"}),200
+
+
+@api_blueprint.route('/transfer-key', methods=['POST'])
+@cross_origin()
+def transfer_key():
+   
+    data = request.get_json()
+    from_user_id = data.get("from_user_id")
+    to_user_id = data.get("to_user_id")
+    key_id = data.get("key_id")
+
+    last_record = KeyHistory.query \
+        .filter_by(key_id=key_id) \
+        .order_by(KeyHistory.timestamp.desc()) \
+        .first()
+
+    if not last_record or last_record.user_id != from_user_id or last_record.action != "issue":
+        return jsonify({"status":"error","message":"Ключ не у этого пользователя"}),400
+
+    new_hist = KeyHistory(
+        user_id=to_user_id,
+        key_id=key_id,
+        action="transfer"
+    )
+    db.session.add(new_hist)
+    db.session.commit()
+
+    return jsonify({"status":"success","message":"Ключ передан другому пользователю"}),200
+
