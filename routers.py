@@ -20,7 +20,9 @@ def login():
             "status": "success",
             "message": "Добро пожаловать!",
             "code": 200,
-            "admin": user_record.admin
+            "admin": user_record.admin,
+            "user_id": user_record.id  #обязательно!
+
         })
     else:
         return jsonify({"status": "error", "message": "Неверный логин или пароль"}), 401
