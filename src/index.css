@@ -5,7 +5,6 @@
 /* 2) Утилиты Tailwind */
 @tailwind utilities;
 
-/* Ваши глобальные стили дальше… */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -20,5 +19,3 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-/* …и т. д. */

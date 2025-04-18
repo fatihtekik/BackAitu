@@ -3,8 +3,8 @@ const plugin = require('tailwindcss/plugin');
 
 module.exports = {
   content: [
-    "./index.html",                      // добавляем корневой HTML
-    "./src/**/*.{js,jsx,ts,tsx}",        // ваши компоненты
+    "./index.html",
+    "./src/**/*.{js,jsx,ts,tsx}",
     "./node_modules/flowbite-react/**/*.js"
   ],
   darkMode: 'class',

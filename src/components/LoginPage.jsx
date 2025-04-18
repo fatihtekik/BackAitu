@@ -7,9 +7,8 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   
-  // Choose one URL and make sure it ends with a slash
+  // const Url = "http://localhost:5000/"; // Local server URL
   const Url = "https://backaitu.onrender.com/";
-  // const Url = "http://localhost:5000/";
   
   const navigate = useNavigate();
   const handleSubmit = (e) => {
@@ -24,20 +23,39 @@ const LoginPage = () => {
     })
       .then(response => {
         if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+          // Try to parse error message from backend if available
+          return response.json().then(errData => {
+            throw new Error(errData.message || `HTTP error! Status: ${response.status}`);
+          }).catch(() => {
+            // Fallback if response is not JSON or parsing fails
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          });
         }
         return response.json();
       })
       .then(data => {
-        if (data.status === "success" && data.admin === true) {
-          navigate("/", { replace: true });
+        if (data.status === "success") {
+          // NOTE: Authentication state is not persisted without localStorage.
+          // User will need to log in again after refresh/closing tab.
+          // Consider using Context, Zustand, Redux for in-memory state,
+          // or server-side sessions with cookies for persistence.
+          
+          // Only navigate if the user is an admin
+          if (data.admin === true) {
+            // TODO: Update global state (e.g., via Context) to reflect logged-in status
+            navigate("/", { replace: true });
+          } else {
+            setError("У вас нет прав доступа (требуется статус администратора)");
+          }
         } else {
-          setError("У вас нет прав доступа (требуется админ)");
+           // Handle potential backend error status
+           setError(data.message || "Неизвестная ошибка входа.");
         }
       })
       .catch((error) => {
         console.error("Error:", error);
-        setError("Ошибка сети. Убедитесь, что сервер запущен.");
+        // Display specific error from response if available, otherwise generic network error
+        setError(error.message || "Ошибка сети или сервера. Проверьте консоль.");
       });
   };
 
