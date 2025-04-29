@@ -20,6 +20,10 @@ const HomePage = () => {
   const [modalType, setModalType] = useState('all');
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [confirmationStatus, setConfirmationStatus] = useState("");
+  const [homeNameFilter, setHomeNameFilter] = useState(''); // Filter for user name on home page history
+  const [homeKeyNameFilter, setHomeKeyNameFilter] = useState(''); // Filter for key name on home page history
+  const [corpusFilter, setCorpusFilter] = useState('all'); // State for corpus filter
+  const [floorFilter, setFloorFilter] = useState('all'); // State for floor filter
 
   const API_URL= "https://backaitu.onrender.com";
 
@@ -179,30 +183,112 @@ const HomePage = () => {
 
   const openKeysModal = (type) => {
     setModalType(type);
+    setCorpusFilter('all'); // Reset filters when opening modal
+    setFloorFilter('all'); // Reset filters when opening modal
     setShowModal(true);
   };
 
-  const filteredKeys = () => {
-    if (!keysList || !Array.isArray(keysList)) return [];
-    try {
-      switch (modalType) {
-        case 'available':
-          return keysList.filter(key => key && key.available === true);
-        case 'issued':
-          return keysList.filter(key => key && key.available === false);
-        case 'all':
-        default:
-          return keysList;
-      }
-    } catch (err) {
-      console.error("Error filtering keys:", err);
-      return [];
-    }
+  // Кнопка-переключатель для фильтров с CSS-переменными и улучшенным ховер-эффектом
+  const FilterButton = ({ label, value, currentFilter, setFilter }) => {
+    // Проверяем типы кнопок для разного стиля
+    const isNumeric = !isNaN(parseInt(label));
+    const isCorpus = /^C[1-3]$/.test(label); // Проверка на C1, C2, C3
+    const isActive = currentFilter === value;
+    
+    // Переключатель фильтра: если нажатая кнопка уже активна, сбрасываем фильтр на 'all'
+    const toggleFilter = () => {
+      setFilter(isActive ? 'all' : value);
+    };
+    
+    // Стили для активного состояния и ховера, использующие CSS-переменные
+    const activeStyle = {
+      backgroundColor: 'var(--color-blue-600, #2563eb)',
+      color: 'white',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      transition: 'all 0.2s ease-in-out'
+    };
+
+    const buttonClass = `
+      ${isNumeric || isCorpus ? 'w-8 h-8' : 'px-3'} py-1.5 text-sm font-semibold rounded-full 
+      transition-all duration-300 ease-in-out focus:outline-none flex items-center justify-center
+      ${!isActive 
+        ? 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-sm' 
+        : 'hover:bg-blue-500 hover:shadow-md'}
+    `;
+    
+    return (
+      <button
+        className={buttonClass}
+        style={isActive ? activeStyle : {}}
+        onClick={toggleFilter}
+      >
+        {label}
+      </button>
+    );
   };
 
   const KeysModal = () => {
     if (!showModal) return null;
-    const keys = filteredKeys();
+
+    const parseCorpus = (keyName) => {
+      if (!keyName) return null;
+      const match = keyName.match(/^C([1-3])/i);
+      return match ? `C${match[1]}` : null;
+    };
+
+    const parseFloor = (keyName) => {
+        if (!keyName) return null;
+        
+        // Обновленный регулярный паттерн для поиска этажа
+        // Например, из C1.3.225 извлекает 2 (первую цифру номера кабинета)
+        const match = keyName.match(/^C[1-3]\.\d+\.(\d)/i);
+        
+        if (match && match[1]) {
+            return parseInt(match[1], 10);
+        }
+        
+        // Если не нашли по основному паттерну, попробуем запасной вариант
+        // для случаев, когда формат ключа может быть иным
+        const fallbackMatch = keyName.match(/^C[1-3]\.(\d)/i);
+        return fallbackMatch ? parseInt(fallbackMatch[1], 10) : null;
+    };
+
+
+    const getFilteredKeys = () => {
+        if (!keysList || !Array.isArray(keysList)) return [];
+        try {
+            let baseFiltered = [];
+            switch (modalType) {
+                case 'available':
+                    baseFiltered = keysList.filter(key => key && key.available === true);
+                    break;
+                case 'issued':
+                    baseFiltered = keysList.filter(key => key && key.available === false);
+                    break;
+                case 'all':
+                default:
+                    baseFiltered = keysList;
+            }
+
+            return baseFiltered.filter(key => {
+                const keyName = key.key_name || key.name || '';
+                const corpus = parseCorpus(keyName);
+                const floor = parseFloor(keyName);
+
+                const corpusMatch = corpusFilter === 'all' || (corpus && corpus.toUpperCase() === corpusFilter.toUpperCase());
+                const floorMatch = floorFilter === 'all' || (floor && floor === parseInt(floorFilter, 10));
+
+                return corpusMatch && floorMatch;
+            });
+
+        } catch (err) {
+            console.error("Error filtering keys:", err);
+            return [];
+        }
+    };
+
+
+    const keys = getFilteredKeys();
     const titleMap = {
       'all': 'Все ключи',
       'available': 'Доступные ключи',
@@ -222,6 +308,32 @@ const HomePage = () => {
             </svg>
           </button>
         </div>
+
+        {/* Все фильтры в одном ряду - увеличен отступ снизу */}
+        <div className="mb-12 p-4 pb-6">
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* Корпусы */}
+            <div className="flex flex-col items-start mr-6">
+              <span className="text-xs font-medium text-gray-600 mb-2">Корпус:</span>
+              <div className="flex gap-2">
+                <FilterButton label="C1" value="C1" currentFilter={corpusFilter} setFilter={setCorpusFilter} />
+                <FilterButton label="C2" value="C2" currentFilter={corpusFilter} setFilter={setCorpusFilter} />
+                <FilterButton label="C3" value="C3" currentFilter={corpusFilter} setFilter={setCorpusFilter} />
+              </div>
+            </div>
+            
+            {/* Этажи */}
+            <div className="flex flex-col items-start">
+              <span className="text-xs font-medium text-gray-600 mb-2">Этаж:</span>
+              <div className="flex gap-2">
+                <FilterButton label="1" value="1" currentFilter={floorFilter} setFilter={setFloorFilter} />
+                <FilterButton label="2" value="2" currentFilter={floorFilter} setFilter={setFloorFilter} />
+                <FilterButton label="3" value="3" currentFilter={floorFilter} setFilter={setFloorFilter} />
+              </div>
+            </div>
+          </div>
+        </div>
+
         {isLoading ? (
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -249,10 +361,11 @@ const HomePage = () => {
                 </div>
               </div>
             ))}
+
           </div>
         ) : (
           <div className="text-center text-gray-500 py-4">
-            {error ? `Ошибка загрузки: ${error}` : 'Ключи не найдены'}
+            {error ? `Ошибка загрузки: ${error}` : (corpusFilter !== 'all' || floorFilter !== 'all' ? 'Нет ключей, соответствующих фильтрам' : 'Ключи не найдены')}
           </div>
         )}
       </Modal>
@@ -358,30 +471,56 @@ const HomePage = () => {
   };
 
   const renderKeyHistoryBlock = () => {
-    // Filter history for today's entries
+    // Filter history for today's entries and apply filters
     const todaysHistory = useMemo(() => {
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
 
       return keyHistory.filter(item => {
+        // Date check
+        let isToday = false;
         try {
-          // Assuming timestamp format is DD.MM.YYYY HH:MM
           const parts = item.timestamp.split(' ');
           const dateParts = parts[0].split('.');
           const timeParts = parts[1].split(':');
-          // Note: Month is 0-indexed in JavaScript Date constructor (0 = January)
           const itemDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1]);
-          return itemDate >= todayStart;
+          isToday = itemDate >= todayStart;
         } catch (e) {
           console.error("Error parsing history timestamp:", item.timestamp, e);
-          return false; // Exclude items with invalid timestamps
+          return false;
         }
+
+        if (!isToday) return false;
+
+        // Filter checks
+        const nameMatch = !homeNameFilter || (item.user_name && item.user_name.toLowerCase().includes(homeNameFilter.toLowerCase()));
+        const keyNameMatch = !homeKeyNameFilter || (item.key_name && item.key_name.toLowerCase().includes(homeKeyNameFilter.toLowerCase()));
+
+        return nameMatch && keyNameMatch;
       });
-    }, [keyHistory]); // Recalculate only when keyHistory changes
+    }, [keyHistory, homeNameFilter, homeKeyNameFilter]); // Add filters to dependency array
 
     return (
       <div className="key-history-container mt-6 bg-white p-7 rounded-lg shadow">
-        <h2 className="text-lg font-medium mb-6">История ключей за Сегодня</h2>
+        <h2 className="text-lg font-medium mb-4">История ключей за Сегодня</h2>
+        {/* Add Filter Inputs */}
+        <div className="flex space-x-4 mb-6"> {/* Increased bottom margin */}
+           <input
+              type="text"
+              placeholder="Искать по ФИО"
+              value={homeNameFilter}
+              onChange={(e) => setHomeNameFilter(e.target.value)}
+              className="flex-1 p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition duration-150 ease-in-out"
+           />
+           <input
+              type="text"
+              placeholder="Искать по ключу"
+              value={homeKeyNameFilter}
+              onChange={(e) => setHomeKeyNameFilter(e.target.value)}
+              // Updated classes for better appearance and spacing
+              className="flex-1 p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition duration-150 ease-in-out"
+           />
+        </div>
         {isHistoryLoading ? (
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -401,8 +540,8 @@ const HomePage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {todaysHistory.length > 0 ? ( // Use the filtered list here
-                  todaysHistory.map(item => { // Use the filtered list here
+                {todaysHistory.length > 0 ? (
+                  todaysHistory.map(item => {
                     const statusInfo = getStatusInfo(item.action);
                     return (
                       <tr key={item.id}>
@@ -420,7 +559,9 @@ const HomePage = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="5" className="text-center text-gray-500 py-4">Нет записей за сегодня</td>
+                    <td colSpan="5" className="text-center text-gray-500 py-4">
+                      {homeNameFilter || homeKeyNameFilter ? 'Нет совпадающих записей за сегодня' : 'Нет записей за сегодня'}
+                    </td>
                   </tr>
                 )}
               </tbody>
