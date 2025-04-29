@@ -3,27 +3,21 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './components/LoginPage.jsx';
 import HomePage from './components/HomePage.jsx';
 import KeysPage from './components/KeysPage.jsx';
-import Layout from './components/Layout.jsx'; // Импорт Layout
+import Layout from './components/Layout.jsx';
+import UserPage from './components/UserPage.jsx';
 
 function App() {
-  // NOTE: Authentication logic needs update if not using localStorage
-  // This is a placeholder - implement proper state management (Context, Zustand, etc.) // Assume logged in for layout example
-  const isAuthenticated = true; // Replace with actual authentication check
+  const isAuthenticated = true;
   return (
     <Router>
       <Routes>
-        {/* Маршруты, которые НЕ используют Layout (например, логин) */}
         <Route path="/login" element={<LoginPage />} />
-
-        {/* Маршруты, которые ИСПОЛЬЗУЮТ Layout */}
-        <Route
-          element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}
-        >
+        <Route element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}>
+          <Route path="/user-system" element={<UserPage />} />
           <Route path="/" element={<HomePage />} />
           <Route path="/keys-history" element={<KeysPage />} />
+          <Route path="/users" element={isAuthenticated ? <UserPage /> : <Navigate to="/login" />} />
         </Route>
-
-        {/* Fallback route */}
         <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} replace />} />
       </Routes>
     </Router>

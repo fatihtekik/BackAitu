@@ -1,7 +1,37 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
-import './KeysPage.css'; 
+import './KeysPage.css';
+import '../styles/HomePage.css';
+
+const getStatusInfo = (action) => {
+    const normalizedAction = action?.toLowerCase();
+    switch (normalizedAction) {
+        case 'request':
+        case 'запрос':
+            return { text: 'Запрос', className: 'bg-yellow-100 text-yellow-700' };
+        case 'return':
+        case 'returned':
+        case 'сдан':
+        case 'вернул':
+            return { text: 'Сдан', className: 'bg-green-100 text-green-700' };
+        case 'issue':
+        case 'issued':
+        case 'approved':
+        case 'выдан':
+            return { text: 'Выдан', className: 'bg-red-100 text-red-700' };
+        case 'denied':
+        case 'отказано':
+            return { text: 'Отказано', className: 'bg-red-100 text-red-700' };
+        case 'pending':
+        case 'ожидает':
+            return { text: 'Ожидает', className: 'bg-yellow-100 text-yellow-700' };
+        case 'transfer':
+            return { text: 'Передан', className: 'bg-blue-100 text-blue-700' };
+        default:
+            return { text: action || 'Неизвестно', className: 'bg-gray-100 text-gray-700' };
+    }
+};
 
 function KeysPage() {
     const [historyData, setHistoryData] = useState([]);
@@ -11,13 +41,11 @@ function KeysPage() {
     const [startDateFilter, setStartDateFilter] = useState('');
     const [endDateFilter, setEndDateFilter] = useState('');
     const [selectedRows, setSelectedRows] = useState(new Set());
-    const [actionFilter, setActionFilter] = useState('all'); // State for action filter
+    const [actionFilter, setActionFilter] = useState('all');
 
-    // Fetch history data
     useEffect(() => {
         const fetchHistory = async () => {
-            // const Url = 'http://localhost:5000/'; // Local server URL
-            const Url = 'https://backaitu.onrender.com/'; // Production server URL
+            const Url = 'https://backaitu.onrender.com/';
             setLoading(true);
             setError('');
             try {
@@ -27,7 +55,6 @@ function KeysPage() {
                         const [datePart, timePart] = item.timestamp.split(' ');
                         const [day, month, year] = datePart.split('.');
                         const [hour, minute] = timePart.split(':');
-                        // Note: month is 0-indexed in JS Date
                         return { ...item, timestampDate: new Date(year, month - 1, day, hour, minute) };
                     });
                     setHistoryData(parsedData);
@@ -44,27 +71,28 @@ function KeysPage() {
         fetchHistory();
     }, []);
 
-    // Filtered data based on name, date range, and action
     const filteredHistory = useMemo(() => {
         return historyData.filter(item => {
             const nameMatch = !nameFilter || item.user_name.toLowerCase().includes(nameFilter.toLowerCase());
             const startDate = startDateFilter ? new Date(startDateFilter) : null;
             const endDate = endDateFilter ? new Date(endDateFilter) : null;
             if (endDate) {
-                endDate.setHours(23, 59, 59, 999); // Include the whole end day
+                endDate.setHours(23, 59, 59, 999);
             }
 
             const dateMatch = (!startDate || item.timestampDate >= startDate) &&
                               (!endDate || item.timestampDate <= endDate);
 
-            // Action filter logic
-            const actionMatch = actionFilter === 'all' || item.action === actionFilter;
+            let actionMatch = actionFilter === 'all';
+            if (!actionMatch) {
+                const itemStatusInfo = getStatusInfo(item.action);
+                actionMatch = (itemStatusInfo.text.toLowerCase() === actionFilter.toLowerCase());
+            }
 
-            return nameMatch && dateMatch && actionMatch; // Include actionMatch
+            return nameMatch && dateMatch && actionMatch;
         });
-    }, [historyData, nameFilter, startDateFilter, endDateFilter, actionFilter]); // Add actionFilter dependency
+    }, [historyData, nameFilter, startDateFilter, endDateFilter, actionFilter]);
 
-    // Handle row selction
     const handleSelectRow = (id) => {
         setSelectedRows(prevSelectedRows => {
             const newSelectedRows = new Set(prevSelectedRows);
@@ -77,7 +105,6 @@ function KeysPage() {
         });
     };
 
-    // Handle select all
     const handleSelectAll = (event) => {
         if (event.target.checked) {
             const allIds = new Set(filteredHistory.map(item => item.id));
@@ -87,10 +114,8 @@ function KeysPage() {
         }
     };
 
-    // Check if all currently filtered rows are selected
     const isAllSelected = filteredHistory.length > 0 && selectedRows.size === filteredHistory.length;
 
-    // Handle export to Excel
     const handleExport = () => {
         if (selectedRows.size === 0) {
             alert('Пожалуйста, выберите строки для экспорта.');
@@ -99,7 +124,7 @@ function KeysPage() {
 
         const dataToExport = historyData
             .filter(item => selectedRows.has(item.id))
-            .map(({ id, key_name, user_name, action, timestamp }) => ({ // Select and order columns for export
+            .map(({ id, key_name, user_name, action, timestamp }) => ({
                 'ID Записи': id,
                 'Ключ': key_name,
                 'Пользователь (ФИО)': user_name,
@@ -111,26 +136,34 @@ function KeysPage() {
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'История Ключей');
 
-        // Set column widths (optional)
         const cols = [
-            { wch: 10 }, // ID Записи
-            { wch: 15 }, // Ключ
-            { wch: 30 }, // Пользователь (ФИО)
-            { wch: 15 }, // Действие
-            { wch: 20 }  // Время
+            { wch: 10 },
+            { wch: 15 },
+            { wch: 30 },
+            { wch: 15 },
+            { wch: 20 }
         ];
         worksheet['!cols'] = cols;
 
         XLSX.writeFile(workbook, 'История_Ключей_Выбранное.xlsx');
     };
 
+    const actionOptions = useMemo(() => {
+        const uniqueActions = new Set();
+        historyData.forEach(item => {
+            const statusInfo = getStatusInfo(item.action);
+            uniqueActions.add(statusInfo.text);
+        });
+        return Array.from(uniqueActions).sort();
+    }, [historyData]);
+
     return (
-        <div className="keys-page-container">
-            <h2>История операций с ключами</h2>
+        <div className="keys-page-container" style={{ padding: "12px" }}>
+            <h2 style={{ padding: "12px" }}>История операций с ключами</h2>
 
-            {error && <p className="error-message">{error}</p>}
+            {error && <p className="error-message" style={{ padding: "12px" }}>{error}</p>}
 
-            <div className="filters">
+            <div className="filters" style={{ padding: "12px" }}>
                 <input
                     type="text"
                     placeholder="Фильтр по ФИО"
@@ -153,12 +186,11 @@ function KeysPage() {
                         onChange={(e) => setEndDateFilter(e.target.value)}
                     />
                 </label>
-                {/* Action filter dropdown */}
                 <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)}>
                     <option value="all">Все действия</option>
-                    <option value="выдан">Выдан</option>
-                    <option value="вернул">Вернул</option>
-                    {/* Add other potential actions if needed */}
+                    {actionOptions.map(action => (
+                        <option key={action} value={action}>{action}</option>
+                    ))}
                 </select>
                 <button onClick={handleExport} disabled={selectedRows.size === 0}>
                     Экспорт выбранных ({selectedRows.size})
@@ -166,13 +198,13 @@ function KeysPage() {
             </div>
 
             {loading ? (
-                <p>Загрузка истории...</p>
+                <p style={{ padding: "12px" }}>Загрузка истории...</p>
             ) : (
-                <div className="history-table-container">
+                <div className="history-table-container" style={{ padding: "12px" }}>
                     <table>
                         <thead>
                             <tr>
-                                <th>
+                                <th style={{ padding: "12px" }}>
                                     <input
                                         type="checkbox"
                                         checked={isAllSelected}
@@ -180,34 +212,41 @@ function KeysPage() {
                                         disabled={filteredHistory.length === 0}
                                     />
                                 </th>
-                                <th>ID</th>
-                                <th>Ключ</th>
-                                <th>Пользователь (ФИО)</th>
-                                <th>Действие</th>
-                                <th>Время</th>
+                                <th style={{ padding: "12px" }}>ID</th>
+                                <th style={{ padding: "12px" }}>Ключ</th>
+                                <th style={{ padding: "12px" }}>Пользователь (ФИО)</th>
+                                <th style={{ padding: "12px" }}>Действие</th>
+                                <th style={{ padding: "12px" }}>Время</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredHistory.length > 0 ? (
-                                filteredHistory.map(item => (
-                                    <tr key={item.id}>
-                                        <td>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedRows.has(item.id)}
-                                                onChange={() => handleSelectRow(item.id)}
-                                            />
-                                        </td>
-                                        <td>{item.id}</td>
-                                        <td>{item.key_name}</td>
-                                        <td>{item.user_name}</td>
-                                        <td>{item.action}</td>
-                                        <td>{item.timestamp}</td>
-                                    </tr>
-                                ))
+                                filteredHistory.map(item => {
+                                    const statusInfo = getStatusInfo(item.action);
+                                    return (
+                                        <tr key={item.id}>
+                                            <td style={{ padding: "12px" }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedRows.has(item.id)}
+                                                    onChange={() => handleSelectRow(item.id)}
+                                                />
+                                            </td>
+                                            <td style={{ padding: "12px" }}>{item.id}</td>
+                                            <td style={{ padding: "12px" }}>{item.key_name}</td>
+                                            <td style={{ padding: "12px" }}>{item.user_name}</td>
+                                            <td style={{ padding: "12px" }}>
+                                                <span className={`status-badge ${statusInfo.className}`} style={{ padding: "2px 8px", borderRadius: "9999px", marginLeft: "12px" }}>
+                                                    {statusInfo.text}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: "12px" }}>{item.timestamp}</td>
+                                        </tr>
+                                    );
+                                })
                             ) : (
                                 <tr>
-                                    <td colSpan="6">Нет данных для отображения</td>
+                                    <td colSpan="6" style={{ padding: "12px" }}>Нет данных для отображения</td>
                                 </tr>
                             )}
                         </tbody>
