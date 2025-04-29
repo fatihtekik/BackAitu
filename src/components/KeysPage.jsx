@@ -125,10 +125,10 @@ function KeysPage() {
         const dataToExport = historyData
             .filter(item => selectedRows.has(item.id))
             .map(({ id, key_name, user_name, action, timestamp }) => ({
-                'ID Записи': id,
+                '№ Записи': id,
                 'Ключ': key_name,
                 'Пользователь (ФИО)': user_name,
-                'Действие': action,
+                'Статус': action,
                 'Время': timestamp
             }));
 
@@ -212,10 +212,10 @@ function KeysPage() {
                                         disabled={filteredHistory.length === 0}
                                     />
                                 </th>
-                                <th style={{ padding: "12px" }}>ID</th>
+                                <th style={{ padding: "12px" }}>№</th>
                                 <th style={{ padding: "12px" }}>Ключ</th>
                                 <th style={{ padding: "12px" }}>Пользователь (ФИО)</th>
-                                <th style={{ padding: "12px" }}>Действие</th>
+                                <th style={{ padding: "12px" }}>Статус</th>
                                 <th style={{ padding: "12px" }}>Время</th>
                             </tr>
                         </thead>

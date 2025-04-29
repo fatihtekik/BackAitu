@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import "../styles/HomePage.css";
 import Modal from './Modal';
 
@@ -14,6 +14,7 @@ const HomePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [isRequestsLoading, setIsRequestsLoading] = useState(true);
+  const [isInitialRequestsLoad, setIsInitialRequestsLoad] = useState(true); // Add this state
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('all');
@@ -99,7 +100,10 @@ const HomePage = () => {
   const fetchKeyRequests = async () => {
     try {
       console.log("Starting fetchKeyRequests");
-      setIsRequestsLoading(true);
+      // Only set loading to true on the very first load
+      if (isInitialRequestsLoad) {
+        setIsRequestsLoading(true);
+      }
       const response = await fetch(`${API_URL}/pending-requests`);
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
@@ -121,7 +125,12 @@ const HomePage = () => {
       setError(prev => prev || "Не удалось загрузить заявки на ключи");
     } finally {
       console.log("Ending fetchKeyRequests, setting loading to false");
+      // Always set loading to false after fetch attempt
       setIsRequestsLoading(false);
+      // If this was the initial load, mark it as complete
+      if (isInitialRequestsLoad) {
+        setIsInitialRequestsLoad(false);
+      }
     }
   };
 
@@ -129,34 +138,44 @@ const HomePage = () => {
     const loadInitialData = async () => {
         setIsLoading(true);
         setIsHistoryLoading(true);
-        setIsRequestsLoading(true);
+        // Initial requests load is handled by fetchKeyRequests now
+        // setIsRequestsLoading(true);
         setError(null);
         try {
+            // Fetch all initial data including requests
             await Promise.allSettled([
                 fetchKeyStats(),
                 fetchKeysList(),
                 fetchKeyHistory(),
+                fetchKeyRequests(), // Add initial requests fetch here
             ]);
         } catch (err) {
             console.error("Error during initial data load:", err);
         } finally {
             setIsLoading(false);
             setIsHistoryLoading(false);
+            // Requests loading state is managed within fetchKeyRequests
+            // setIsRequestsLoading(false);
         }
     };
 
     loadInitialData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Dependencies remain empty for initial load
 
   useEffect(() => {
+    // Polling starts after initial load completes
     console.log("Setting up request polling");
-    fetchKeyRequests().then(() => console.log("Initial request fetch complete"));
+    // Remove initial fetch from here, it's done in the first useEffect
+    // fetchKeyRequests().then(() => console.log("Initial request fetch complete"));
     const interval = setInterval(() => {
       console.log("Polling for requests");
+      // Subsequent fetches won't trigger the main loading state
       fetchKeyRequests().then(() => console.log("Polling request fetch complete"));
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Dependencies remain empty for polling setup
 
   const openKeysModal = (type) => {
     setModalType(type);
@@ -331,46 +350,81 @@ const HomePage = () => {
       case 'pending':
       case 'ожидает':
         return { text: 'Ожидает', className: 'bg-yellow-100 text-yellow-700' };
+      case 'transfer':
+        return { text: 'Передан', className: 'bg-blue-100 text-blue-700' };
       default:
         return { text: action || 'Неизвестно', className: 'bg-gray-100 text-gray-700' };
     }
   };
 
   const renderKeyHistoryBlock = () => {
+    // Filter history for today's entries
+    const todaysHistory = useMemo(() => {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      return keyHistory.filter(item => {
+        try {
+          // Assuming timestamp format is DD.MM.YYYY HH:MM
+          const parts = item.timestamp.split(' ');
+          const dateParts = parts[0].split('.');
+          const timeParts = parts[1].split(':');
+          // Note: Month is 0-indexed in JavaScript Date constructor (0 = January)
+          const itemDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1]);
+          return itemDate >= todayStart;
+        } catch (e) {
+          console.error("Error parsing history timestamp:", item.timestamp, e);
+          return false; // Exclude items with invalid timestamps
+        }
+      });
+    }, [keyHistory]); // Recalculate only when keyHistory changes
+
     return (
-      <div className="key-history-container mt-6 bg-white p-7 rounded-lg shadow" style={{ padding: "12px" }}>
-        <h2 className="text-lg font-medium mb-6" style={{ padding: "12px" }}>История ключей</h2>
-        <div className="key-history-header grid grid-cols-2 gap-4 mb-4" style={{ padding: "12px" }}>
-          <div className="text-sm font-medium text-gray-500">Ключ / Пользователь</div>
-          <div className="text-sm font-medium text-gray-500 text-right">Действие / Время</div>
-        </div>
+      <div className="key-history-container mt-6 bg-white p-7 rounded-lg shadow">
+        <h2 className="text-lg font-medium mb-6">История ключей за Сегодня</h2>
         {isHistoryLoading ? (
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
-        ) : keyHistory.length > 0 ? (
-          <div className="key-history-list space-y-3">
-            {keyHistory.map(item => {
-              const statusInfo = getStatusInfo(item.action);
-              return (
-                <div className="key-history-item grid grid-cols-2 gap-4 items-center border-b pb-3 last:border-b-0" key={item.id} style={{ padding: "12px" }}> 
-                  <div className="key-history-key-info">
-                    <div className="key-history-key-name font-medium">{item.key_name}</div>
-                    <div className="key-history-username text-sm text-gray-600">{item.user_name}</div>
-                  </div>
-                  <div className="key-history-user-info text-right">
-                    <span className={`key-history-status px-2 py-1 rounded text-xs ${statusInfo.className}`} style={{ marginLeft: "12px" }}>
-                      {statusInfo.text}
-                    </span>
-                    <div className="text-xs text-gray-500 mt-1">{item.timestamp}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        ) : error && error.includes("историю") ? (
+          <div className="text-center text-red-500 py-4">Ошибка: {error}</div>
         ) : (
-          <div className="text-center text-gray-500 py-4">
-            {error && error.includes("историю") ? `Ошибка: ${error}` : 'История отсутствует'}
+          <div className="history-table-container overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead>
+                <tr>
+                  <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">№</th>
+                  <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ключ</th>
+                  <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Пользователь</th>
+                  <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
+                  <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Время</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {todaysHistory.length > 0 ? ( // Use the filtered list here
+                  todaysHistory.map(item => { // Use the filtered list here
+                    const statusInfo = getStatusInfo(item.action);
+                    return (
+                      <tr key={item.id}>
+                        <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{item.id}</td>
+                        <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{item.key_name}</td>
+                        <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{item.user_name}</td>
+                        <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">
+                          <span className={`status-badge px-2 py-1 rounded-full text-xs ${statusInfo.className}`}>
+                            {statusInfo.text}
+                          </span>
+                        </td>
+                        <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{item.timestamp}</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="text-center text-gray-500 py-4">Нет записей за сегодня</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -378,11 +432,12 @@ const HomePage = () => {
   };
   const renderKeyRequestsBlock = () => {
     console.log("Rendering key requests block. Loading:", isRequestsLoading, "Request count:", keyRequests.length);
-    
+
+    // Use isRequestsLoading for the spinner, which is now only true on initial load
     return (
       <div className="card bg-white p-7 rounded-lg shadow flex-1 min-h-[200px] flex flex-col">
         <h2 className="text-lg font-medium mb-6">Подтверждение заявок</h2>
-        {isRequestsLoading ? (
+        {isRequestsLoading ? ( // This condition now only true on initial load
           <div className="flex justify-center items-center flex-grow">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
           </div>
