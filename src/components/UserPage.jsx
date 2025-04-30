@@ -88,17 +88,17 @@ const EditUserModal = ({ user, onClose, onSave, isLoading }) => {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm transition-colors"
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm transition-colors shadow-sm border border-gray-300"
                         disabled={isLoading}
-                        style={{ padding: "5px" }}
+                        style={{ padding: "8px 16px" }}
                     >
                         Отмена
                     </button>
                     <button
                         type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-sm disabled:opacity-50 transition-colors"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-sm disabled:opacity-50 transition-colors shadow-sm border border-transparent"
                         disabled={isLoading}
-                        style={{ padding: "5px" }}
+                        style={{ padding: "8px 16px" }}
                     >
                         {isLoading ? 'Сохранение...' : 'Сохранить'}
                     </button>
@@ -181,8 +181,8 @@ const getStatusInfo = (action) => {
               <div className="flex justify-end mt-4 pt-2 border-t border-gray-200" style={{ padding: "12px" }}>
                   <button
                       onClick={onClose}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm transition-colors"
-                      style={{ padding: "12px" }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm transition-colors shadow-sm border border-transparent"
+                      style={{ padding: "8px 16px" }}
                   >
                       Закрыть
                   </button>
@@ -253,8 +253,8 @@ const CreateUserModal = ({ onClose, onSave, isLoading }) => {
                     />
                 </div>
                 <div className="flex justify-end pt-4" style={{ padding: "5px", gap: "7px" }}>
-                    <button type="button" onClick={onClose} disabled={isLoading} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm transition-colors">Отмена</button>
-                    <button type="submit" disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-sm disabled:opacity-50 transition-colors">
+                    <button type="button" onClick={onClose} disabled={isLoading} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm transition-colors shadow-sm border border-gray-300" style={{ padding: "8px 16px" }}>Отмена</button>
+                    <button type="submit" disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-sm disabled:opacity-50 transition-colors shadow-sm border border-transparent" style={{ padding: "8px 16px" }}>
                         {isLoading ? 'Создание...' : 'Создать'}
                     </button>
                 </div>
@@ -268,6 +268,9 @@ const UserPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const API_URL= "https://backaitu.onrender.com";
+    
+    // Add state for selected users
+    const [selectedUsers, setSelectedUsers] = useState([]);
 
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
@@ -281,6 +284,7 @@ const UserPage = () => {
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [isCreatingUser, setIsCreatingUser] = useState(false);
+    const [deletingUserId, setDeletingUserId] = useState(null);
 
     const fetchUsers = async () => {
         setIsLoading(true);
@@ -391,6 +395,51 @@ const UserPage = () => {
         }
     };
 
+    // Add handler for selecting/deselecting all users
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedUsers(users.map(user => user.id));
+        } else {
+            setSelectedUsers([]);
+        }
+    };
+
+    // Add handler for selecting/deselecting individual user
+    const handleSelectUser = (userId, isChecked) => {
+        if (isChecked) {
+            setSelectedUsers(prev => [...prev, userId]);
+        } else {
+            setSelectedUsers(prev => prev.filter(id => id !== userId));
+        }
+    };
+
+    const deleteUser = async () => {
+        if (selectedUsers.length === 0) return;
+        
+        if (!window.confirm(`Вы действительно хотите удалить ${selectedUsers.length} пользователей?`)) return;
+        
+        setDeletingUserId('bulk');
+        try {
+            // Delete users one by one
+            for (const userId of selectedUsers) {
+                const resp = await fetch(`${API_URL}/users/${userId}`, { method: 'DELETE' });
+                if (!resp.ok) {
+                    const data = await resp.json().catch(() => ({}));
+                    throw new Error(data.message || `Не удалось удалить пользователя с ID: ${userId}`);
+                }
+            }
+            // Refresh user list
+            await fetchUsers();
+            // Clear selection
+            setSelectedUsers([]);
+        } catch (err) {
+            console.error(err);
+            alert(err.message);
+        } finally {
+            setDeletingUserId(null);
+        }
+    };
+
     const handleEditClick = (user) => {
         setEditingUser(user);
         setModalError(null);
@@ -431,11 +480,20 @@ const UserPage = () => {
         <div className="p-6 bg-gray-50 min-h-screen" style={{ padding: "5px" }}>
             <h1 className="text-2xl font-semibold text-gray-900 mb-6" style={{ padding: "5px" }}>Пользователи</h1>
 
-            <div className="mb-4 text-right" style={{ padding: "5px" }}>
+            <div className="mb-4 flex justify-between items-center" style={{ padding: "5px" }}>
+                <button
+                    onClick={deleteUser}
+                    disabled={selectedUsers.length === 0 || isLoading || deletingUserId === 'bulk'}
+                    className={`px-4 py-2 ${selectedUsers.length > 0 ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'} rounded-md text-sm transition-colors shadow-sm border border-transparent`}
+                    style={{ padding: "8px 16px" }}
+                >
+                    {deletingUserId === 'bulk' ? 'Удаление...' : `Удалить выбранных (${selectedUsers.length})`}
+                </button>
+                
                 <button
                     onClick={handleCreateClick}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm transition-colors"
-                    style={{ padding: "5px" }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm transition-colors shadow-sm border border-transparent"
+                    style={{ padding: "8px 16px" }}
                 >
                     Добавить пользователя
                 </button>
@@ -447,7 +505,13 @@ const UserPage = () => {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
-                                    <input type="checkbox" className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded" />
+                                    <input 
+                                        type="checkbox" 
+                                        className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                        checked={selectedUsers.length > 0 && selectedUsers.length === users.length}
+                                        onChange={handleSelectAll}
+                                        disabled={isLoading || users.length === 0}
+                                    />
                                 </th>
                                 <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
                                     Пользователь
@@ -485,10 +549,16 @@ const UserPage = () => {
                                     <td colSpan="6" className="text-center py-10 text-gray-500">Пользователи не найдены.</td>
                                 </tr>
                             ) : (
-                                users.map((user) => (
-                                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                                users.map(user => (
+                                    <tr key={user.id}>
                                         <td className="table-cell px-6 py-4 whitespace-nowrap" style={{ padding: "12px" }}>
-                                            <input type="checkbox" className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded" />
+                                            <input 
+                                                type="checkbox" 
+                                                className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                                checked={selectedUsers.includes(user.id)}
+                                                onChange={(e) => handleSelectUser(user.id, e.target.checked)}
+                                                disabled={deletingUserId === 'bulk'}
+                                            />
                                         </td>
                                         <td className="table-cell px-6 py-4 whitespace-nowrap" style={{ padding: "12px" }}>
                                             <div className="text-sm font-medium text-gray-900">{user.name}</div>
@@ -512,15 +582,15 @@ const UserPage = () => {
                                             <div className="flex" style={{ gap: "7px" }}>
                                                 <button
                                                     onClick={() => handleEditClick(user)}
-                                                    className="text-blue-600 hover:text-blue-900 hover:underline transition-colors"
-                                                    title="Редактировать"
+                                                    disabled={deletingUserId === 'bulk'}
+                                                    className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors shadow-sm border border-blue-200"
                                                 >
                                                     Редактировать
                                                 </button>
                                                 <button
                                                     onClick={() => handleHistoryClick(user)}
-                                                    className="text-green-600 hover:text-green-900 hover:underline transition-colors"
-                                                    title="История ключей"
+                                                    disabled={deletingUserId === 'bulk'}
+                                                    className="px-3 py-1.5 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors shadow-sm border border-green-200"
                                                 >
                                                     История
                                                 </button>
