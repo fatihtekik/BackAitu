@@ -38,7 +38,6 @@ function KeysPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [nameFilter, setNameFilter] = useState('');
-    const [keyNameFilter, setKeyNameFilter] = useState(''); // Add state for key name filter
     const [startDateFilter, setStartDateFilter] = useState('');
     const [endDateFilter, setEndDateFilter] = useState('');
     const [selectedRows, setSelectedRows] = useState(new Set());
@@ -75,7 +74,6 @@ function KeysPage() {
     const filteredHistory = useMemo(() => {
         return historyData.filter(item => {
             const nameMatch = !nameFilter || item.user_name.toLowerCase().includes(nameFilter.toLowerCase());
-            const keyNameMatch = !keyNameFilter || item.key_name.toLowerCase().includes(keyNameFilter.toLowerCase()); // Add key name matching
             const startDate = startDateFilter ? new Date(startDateFilter) : null;
             const endDate = endDateFilter ? new Date(endDateFilter) : null;
             if (endDate) {
@@ -91,9 +89,9 @@ function KeysPage() {
                 actionMatch = (itemStatusInfo.text.toLowerCase() === actionFilter.toLowerCase());
             }
 
-            return nameMatch && keyNameMatch && dateMatch && actionMatch; // Include keyNameMatch
+            return nameMatch && dateMatch && actionMatch;
         });
-    }, [historyData, nameFilter, keyNameFilter, startDateFilter, endDateFilter, actionFilter]); // Add keyNameFilter dependency
+    }, [historyData, nameFilter, startDateFilter, endDateFilter, actionFilter]);
 
     const handleSelectRow = (id) => {
         setSelectedRows(prevSelectedRows => {
@@ -171,12 +169,6 @@ function KeysPage() {
                     placeholder="Фильтр по ФИО"
                     value={nameFilter}
                     onChange={(e) => setNameFilter(e.target.value)}
-                />
-                <input // Add input for key name filter
-                    type="text"
-                    placeholder="Фильтр по ключу (кабинету)"
-                    value={keyNameFilter}
-                    onChange={(e) => setKeyNameFilter(e.target.value)}
                 />
                 <label>
                     С:

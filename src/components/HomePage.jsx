@@ -500,25 +500,37 @@ const HomePage = () => {
       });
     }, [keyHistory, homeNameFilter, homeKeyNameFilter]); // Add filters to dependency array
 
+    // Style for small, miniature input fields with equal padding
+    const miniInputStyle = {
+      height: "28px",
+      fontSize: "12px",
+      padding: "4px 8px",
+      margin: "4px",
+      borderRadius: "4px",
+      border: "1px solid #ccc",
+      marginBottom: "12px",
+    };
+
     return (
       <div className="key-history-container mt-6 bg-white p-7 rounded-lg shadow">
         <h2 className="text-lg font-medium mb-4">История ключей за Сегодня</h2>
         {/* Add Filter Inputs */}
-        <div className="flex space-x-4 mb-6"> {/* Increased bottom margin */}
+        <div className="flex space-x-4 mb-6">
            <input
               type="text"
               placeholder="Искать по ФИО"
               value={homeNameFilter}
               onChange={(e) => setHomeNameFilter(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition duration-150 ease-in-out"
+              style={miniInputStyle}
+              className="flex-1 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition duration-150 ease-in-out"
            />
            <input
               type="text"
               placeholder="Искать по ключу"
               value={homeKeyNameFilter}
               onChange={(e) => setHomeKeyNameFilter(e.target.value)}
-              // Updated classes for better appearance and spacing
-              className="flex-1 p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition duration-150 ease-in-out"
+              style={miniInputStyle}
+              className="flex-1 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition duration-150 ease-in-out"
            />
         </div>
         {isHistoryLoading ? (
