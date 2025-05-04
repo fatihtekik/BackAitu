@@ -2,13 +2,41 @@ import React, { useState, useEffect } from 'react';
 import '../styles/HomePage.css';
 import Modal from './Modal';
 
-const EditKeyModal = ({ key, allCategories, onClose, onSave, isLoading }) => {
-    const [selectedCategoryIds, setSelectedCategoryIds] = useState(key?.categories?.map(cat => cat.id) || []);
+const EditKeyModal = ({ keys, allCategories, onClose, onSave, isLoading }) => {
+    const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
     const [error, setError] = useState('');
+    
+    // Determine if we're editing a single key or multiple keys
+    const isBulkEdit = Array.isArray(keys) && keys.length > 1;
+    const singleKey = !isBulkEdit ? keys : null;
+    
     useEffect(() => {
-        setSelectedCategoryIds(key?.categories?.map(cat => cat.id) || []);
+        if (isBulkEdit) {
+            // In bulk mode, start with common categories across all selected keys
+            const commonCategories = findCommonCategories(keys);
+            setSelectedCategoryIds(commonCategories.map(cat => cat.id));
+        } else if (singleKey) {
+            // Single key mode - use its categories
+            setSelectedCategoryIds(singleKey.categories?.map(cat => cat.id) || []);
+        }
         setError('');
-    }, [key]);
+    }, [keys, isBulkEdit, singleKey]);
+
+    // Find categories common to all selected keys
+    const findCommonCategories = (keysArray) => {
+        if (!keysArray || keysArray.length === 0) return [];
+        
+        // Extract category IDs from each key
+        const categoryIdSets = keysArray.map(key => 
+            new Set(key.categories?.map(cat => cat.id) || []));
+        
+        // Find intersection of all sets
+        const commonIds = [...categoryIdSets[0]].filter(id => 
+            categoryIdSets.every(set => set.has(id)));
+            
+        // Return category objects for common IDs
+        return allCategories.filter(cat => commonIds.includes(cat.id));
+    };
 
     const handleCategoryChange = (categoryId) => {
         setSelectedCategoryIds(prev =>
@@ -33,19 +61,32 @@ const EditKeyModal = ({ key, allCategories, onClose, onSave, isLoading }) => {
         e.preventDefault();
         setError('');
         try {
-            await onSave(key.id, { category_ids: selectedCategoryIds });
+            if (isBulkEdit) {
+                // Bulk update mode
+                const keyIds = keys.map(key => key.id);
+                await onSave(keyIds, { category_ids: selectedCategoryIds, bulkEdit: true });
+            } else if (singleKey) {
+                // Single key update mode
+                await onSave(singleKey.id, { category_ids: selectedCategoryIds });
+            }
         } catch (err) {
             setError(err.message || 'Не удалось обновить категории ключа.');
         }
     };
 
-    if (!key) return null;
+    // Ensure we have a valid key or keys before rendering
+    if ((!isBulkEdit && !singleKey) || (isBulkEdit && (!keys || keys.length === 0))) {
+        return null;
+    }
 
     return (
         <Modal onClose={onClose}>
             <div className="key-modal-header" style={{ padding: "5px" }}>
                 <h3 className="text-lg font-semibold text-gray-900" style={{ padding: "5px" }}>
-                    Редактировать категории ключа: {key.key_name}
+                    {isBulkEdit 
+                        ? `Редактировать категории для ${keys.length} ключей` 
+                        : `Редактировать категории ключа: ${singleKey.key_name}`
+                    }
                 </h3>
                 <button 
                     className="p-1 rounded-full hover:bg-gray-100"
@@ -142,6 +183,10 @@ const EditKeysPage = () => {
     const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
     const API_URL = "https://backaitu.onrender.com";
 
+    // States for keys selection
+    const [selectedKeys, setSelectedKeys] = useState([]);
+    const [selectAll, setSelectAll] = useState(false);
+
     // Modal states
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingKey, setEditingKey] = useState(null);
@@ -159,7 +204,17 @@ const EditKeysPage = () => {
             const data = await response.json();
             if (data.status === "success") {
                 // Ensure categories are included and are arrays
-                const keysWithCategories = data.keys.map(k => ({ ...k, categories: k.categories || [] }));
+                const keysWithCategories = data.keys.map(k => {
+                    // Set default "user" category if none exists
+                    const categories = k.categories || [];
+                    const hasUserCategory = categories.some(cat => cat.name === "user");
+                    if (categories.length === 0 && !hasUserCategory) {
+                        // Add "user" category by default (this will be handled on the backend)
+                        // For display purposes, we'll show it here
+                        categories.push({ id: -1, name: "user" });
+                    }
+                    return { ...k, categories };
+                });
                 setKeys(keysWithCategories || []);
             } else {
                 throw new Error(data.message || "Failed to fetch keys");
@@ -181,7 +236,16 @@ const EditKeysPage = () => {
             }
             const data = await response.json();
             if (data.status === "success") {
-                setAllCategories(data.categories || []);
+                // Check if "user" category exists
+                const userCategory = data.categories.find(cat => cat.name === "user");
+                let categoriesList = data.categories || [];
+                
+                // If no "user" category exists, we'll consider adding it
+                if (!userCategory) {
+                    console.log("User category not found, may need to create it");
+                }
+                
+                setAllCategories(categoriesList);
             } else {
                 console.error("Failed to fetch categories:", data.message);
             }
@@ -196,30 +260,83 @@ const EditKeysPage = () => {
         fetchAllCategories();
     }, []);
 
-    // Update key categories
+    // Handle key selection
+    const toggleKeySelection = (keyId) => {
+        setSelectedKeys(prev => {
+            if (prev.includes(keyId)) {
+                return prev.filter(id => id !== keyId);
+            } else {
+                return [...prev, keyId];
+            }
+        });
+    };
+
+    // Handle select all keys
+    const toggleSelectAllKeys = () => {
+        if (selectAll || selectedKeys.length === filteredKeys.length) {
+            // Deselect all
+            setSelectedKeys([]);
+            setSelectAll(false);
+        } else {
+            // Select all filtered keys
+            setSelectedKeys(filteredKeys.map(key => key.id));
+            setSelectAll(true);
+        }
+    };
+
+    // Update key categories - now handles both single and bulk operations
     const updateKeyCategories = async (keyId, categoryData) => {
         setIsUpdatingKey(true);
         try {
-            const response = await fetch(`${API_URL}/keys/${keyId}/categories`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(categoryData),
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.message || `HTTP error! Status: ${response.status}`);
-            }
-            
-            if (data.status === "success") {
+            if (categoryData.bulkEdit) {
+                // Bulk update mode
+                const keyIds = Array.isArray(keyId) ? keyId : [keyId];
+                
+                // Make multiple calls to update each key
+                const updatePromises = keyIds.map(id => 
+                    fetch(`${API_URL}/keys/${id}/categories`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ category_ids: categoryData.category_ids })
+                    })
+                );
+                
+                const responses = await Promise.all(updatePromises);
+                
+                // Check if any request failed
+                const failedRequests = responses.filter(res => !res.ok);
+                if (failedRequests.length > 0) {
+                    throw new Error(`${failedRequests.length} из ${responses.length} обновлений не удались`);
+                }
+                
                 setShowEditModal(false);
                 setEditingKey(null);
+                setSelectedKeys([]);
+                setSelectAll(false);
                 await fetchKeys(); // Refresh key list
             } else {
-                throw new Error(data.message || "Failed to update key categories");
+                // Single key update mode
+                const response = await fetch(`${API_URL}/keys/${keyId}/categories`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ category_ids: categoryData.category_ids }),
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || `HTTP error! Status: ${response.status}`);
+                }
+                
+                if (data.status === "success") {
+                    setShowEditModal(false);
+                    setEditingKey(null);
+                    await fetchKeys(); // Refresh key list
+                } else {
+                    throw new Error(data.message || "Failed to update key categories");
+                }
             }
         } catch (err) {
             console.error("Error updating key categories:", err);
@@ -231,6 +348,13 @@ const EditKeysPage = () => {
 
     const handleEditClick = (key) => {
         setEditingKey(key);
+        setShowEditModal(true);
+    };
+    
+    const handleBulkEditClick = () => {
+        // Get the selected keys objects
+        const keysToEdit = keys.filter(key => selectedKeys.includes(key.id));
+        setEditingKey(keysToEdit);
         setShowEditModal(true);
     };
 
@@ -246,8 +370,7 @@ const EditKeysPage = () => {
         let matchesCategory = true;
         
         if (searchQuery) {
-            const keyName = `${key.corpus}.${key.cab}`.toLowerCase();
-            matchesSearch = keyName.includes(searchQuery.toLowerCase());
+            matchesSearch = key.key_name.toLowerCase().includes(searchQuery.toLowerCase());
         }
         
         if (selectedCategoryFilter !== 'all') {
@@ -272,37 +395,49 @@ const EditKeysPage = () => {
             {/* Display general errors */}
             {error && <p className="mb-4 text-red-600 text-sm p-3 bg-red-100 rounded border border-red-300">{error}</p>}
             
-            {/* Search and filter controls */}
-            <div className="mb-6 flex flex-wrap gap-4 items-center" style={{ padding: "5px" }}>
-                <div className="flex-1 min-w-[200px]">
-                    <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
-                        Поиск ключа
-                    </label>
-                    <input
-                        type="text"
-                        id="search"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Введите номер ключа..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
+            {/* Search, filter controls and bulk action button */}
+            <div className="mb-6 flex flex-wrap gap-4 items-end justify-between" style={{ padding: "5px" }}>
+                <div className="flex flex-wrap gap-4 items-end">
+                    <div className="min-w-[200px]">
+                        <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
+                            Поиск ключа
+                        </label>
+                        <input
+                            type="text"
+                            id="search"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Введите номер ключа..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        />
+                    </div>
+                    <div className="min-w-[200px]">
+                        <label htmlFor="category-filter" className="block text-sm font-medium text-gray-700 mb-1">
+                            Фильтр по категории
+                        </label>
+                        <select
+                            id="category-filter"
+                            value={selectedCategoryFilter}
+                            onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                            <option value="all">Все категории</option>
+                            {allCategories.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-                <div className="flex-1 min-w-[200px]">
-                    <label htmlFor="category-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                        Фильтр по категории
-                    </label>
-                    <select
-                        id="category-filter"
-                        value={selectedCategoryFilter}
-                        onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                
+                {/* Bulk edit button */}
+                {selectedKeys.length > 0 && (
+                    <button
+                        onClick={handleBulkEditClick}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none text-sm transition-colors shadow-sm border border-transparent"
                     >
-                        <option value="all">Все категории</option>
-                        {allCategories.map(cat => (
-                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
-                    </select>
-                </div>
+                        Редактировать выбранные ({selectedKeys.length})
+                    </button>
+                )}
             </div>
 
             {/* Keys table */}
@@ -311,6 +446,15 @@ const EditKeysPage = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
+                                <th scope="col" className="table-header px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px", width: "40px" }}>
+                                    <input
+                                        type="checkbox"
+                                        className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                        checked={selectAll || (filteredKeys.length > 0 && selectedKeys.length === filteredKeys.length)}
+                                        onChange={toggleSelectAllKeys}
+                                        disabled={isLoading || filteredKeys.length === 0}
+                                    />
+                                </th>
                                 <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
                                     Ключ
                                 </th>
@@ -328,7 +472,7 @@ const EditKeysPage = () => {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan="4" className="text-center py-10">
+                                    <td colSpan="5" className="text-center py-10">
                                         <div className="flex justify-center items-center">
                                             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
                                             <span className="ml-3 text-gray-500">Загрузка...</span>
@@ -337,7 +481,7 @@ const EditKeysPage = () => {
                                 </tr>
                             ) : filteredKeys.length === 0 ? (
                                 <tr>
-                                    <td colSpan="4" className="text-center py-10 text-gray-500">
+                                    <td colSpan="5" className="text-center py-10 text-gray-500">
                                         {searchQuery || selectedCategoryFilter !== 'all' 
                                             ? 'Ключи не найдены по заданным критериям.' 
                                             : 'Ключи не найдены.'}
@@ -345,7 +489,18 @@ const EditKeysPage = () => {
                                 </tr>
                             ) : (
                                 filteredKeys.map(key => (
-                                    <tr key={key.id}>
+                                    <tr 
+                                        key={key.id}
+                                        className={selectedKeys.includes(key.id) ? "bg-blue-50" : ""}
+                                    >
+                                        <td className="table-cell px-6 py-4 text-center" style={{ padding: "12px" }}>
+                                            <input
+                                                type="checkbox"
+                                                className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                                checked={selectedKeys.includes(key.id)}
+                                                onChange={() => toggleKeySelection(key.id)}
+                                            />
+                                        </td>
                                         <td className="table-cell px-6 py-4 whitespace-nowrap" style={{ padding: "12px" }}>
                                             <div className="text-sm font-medium text-gray-900">
                                                 {key.key_name}
@@ -366,7 +521,7 @@ const EditKeysPage = () => {
                                                 onClick={() => handleEditClick(key)}
                                                 className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors shadow-sm border border-blue-200"
                                             >
-                                                Редактировать категории
+                                                Редактировать
                                             </button>
                                         </td>
                                     </tr>
@@ -380,7 +535,7 @@ const EditKeysPage = () => {
             {/* Edit Key Categories Modal */}
             {showEditModal && editingKey && (
                 <EditKeyModal
-                    key={editingKey}
+                    keys={editingKey}
                     allCategories={allCategories}
                     onClose={handleCloseModal}
                     onSave={updateKeyCategories}

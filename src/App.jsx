@@ -18,7 +18,6 @@ function App() {
           <Route path="/edit-key" element={<EditKeysPage />} />
           <Route path='/category' element={<Category />} />
           <Route path="/category/:id" element={<Category />} />
-          <Route path="/user-system" element={<UserPage />} />
           <Route path="/" element={<HomePage />} />
           <Route path="/keys-history" element={<KeysPage />} />
           <Route path="/users" element={isAuthenticated ? <UserPage /> : <Navigate to="/login" />} />

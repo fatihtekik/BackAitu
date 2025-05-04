@@ -38,6 +38,7 @@ function KeysPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [nameFilter, setNameFilter] = useState('');
+    const [keyFilter, setKeyFilter] = useState(''); // Add the missing keyFilter state
     const [startDateFilter, setStartDateFilter] = useState('');
     const [endDateFilter, setEndDateFilter] = useState('');
     const [selectedRows, setSelectedRows] = useState(new Set());
@@ -74,6 +75,7 @@ function KeysPage() {
     const filteredHistory = useMemo(() => {
         return historyData.filter(item => {
             const nameMatch = !nameFilter || item.user_name.toLowerCase().includes(nameFilter.toLowerCase());
+            const keyMatch = !keyFilter || item.key_name.toLowerCase().includes(keyFilter.toLowerCase());
             const startDate = startDateFilter ? new Date(startDateFilter) : null;
             const endDate = endDateFilter ? new Date(endDateFilter) : null;
             if (endDate) {
@@ -89,9 +91,9 @@ function KeysPage() {
                 actionMatch = (itemStatusInfo.text.toLowerCase() === actionFilter.toLowerCase());
             }
 
-            return nameMatch && dateMatch && actionMatch;
+            return nameMatch && keyMatch && dateMatch && actionMatch;
         });
-    }, [historyData, nameFilter, startDateFilter, endDateFilter, actionFilter]);
+    }, [historyData, nameFilter, keyFilter, startDateFilter, endDateFilter, actionFilter]);
 
     const handleSelectRow = (id) => {
         setSelectedRows(prevSelectedRows => {
@@ -169,6 +171,12 @@ function KeysPage() {
                     placeholder="Фильтр по ФИО"
                     value={nameFilter}
                     onChange={(e) => setNameFilter(e.target.value)}
+                />
+                <input
+                    type="text"
+                    placeholder="Фильтр по ключу"
+                    value={keyFilter}
+                    onChange={(e) => setKeyFilter(e.target.value)}
                 />
                 <label>
                     С:
