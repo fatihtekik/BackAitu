@@ -6,6 +6,7 @@ import KeysPage from './components/KeysPage.jsx';
 import Layout from './components/Layout.jsx';
 import UserPage from './components/UserPage.jsx';
 import Category from './components/Category.jsx';
+import EditKeysPage from './components/EditKeysPage.jsx';
 
 function App() {
   const isAuthenticated = true;
@@ -14,6 +15,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}>
+          <Route path="/edit-key" element={<EditKeysPage />} />
           <Route path='/category' element={<Category />} />
           <Route path="/category/:id" element={<Category />} />
           <Route path="/user-system" element={<UserPage />} />

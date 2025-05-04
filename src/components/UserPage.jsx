@@ -38,6 +38,17 @@ const EditUserModal = ({ user, allCategories, onClose, onSave, isLoading }) => {
         );
     };
 
+    // Add a "select all" toggle function
+    const toggleSelectAll = () => {
+        if (selectedCategoryIds.length === allCategories.length) {
+            // If all selected, deselect all
+            setSelectedCategoryIds([]);
+        } else {
+            // Otherwise select all
+            setSelectedCategoryIds(allCategories.map(cat => cat.id));
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -48,6 +59,12 @@ const EditUserModal = ({ user, allCategories, onClose, onSave, isLoading }) => {
         if (!formData.phone) { // Validate phone
              setError('Телефон не может быть пустым.');
              return;
+        }
+
+        // Add validation for categories if needed
+        if (selectedCategoryIds.length === 0) {
+            setError('Выберите хотя бы одну категорию.');
+            return;
         }
 
         const updateData = { 
@@ -126,26 +143,54 @@ const EditUserModal = ({ user, allCategories, onClose, onSave, isLoading }) => {
                         style={{ padding: "5px" }}
                     />
                 </div>
-                {/* Category Selection */}
-                <div style={{ padding: "5px" }}>
-                     <label className="text-sm font-medium text-gray-700 block mb-1" style={{ padding: "5px" }}>Категории</label>
-                     <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2 space-y-1">
-                         {allCategories.length > 0 ? allCategories.map(cat => (
-                             <div key={cat.id} className="flex items-center">
-                                 <input
-                                     type="checkbox"
-                                     id={`cat-edit-${cat.id}`}
-                                     checked={selectedCategoryIds.includes(cat.id)}
-                                     onChange={() => handleCategoryChange(cat.id)}
-                                     className="h-4 w-4 text-blue-600 border-gray-300 rounded mr-2"
-                                 />
-                                 <label htmlFor={`cat-edit-${cat.id}`} className="text-sm text-gray-700">{cat.name}</label>
-                             </div>
-                         )) : <p className="text-sm text-gray-500">Категории не загружены</p>}
-                     </div>
-                 </div>
+                {/* Enhanced Category Selection */}
+                <div style={{ padding: "10px" }}>
+                    <div className="flex justify-between items-center mb-2" style={{ padding: "5px" }}>
+                        <label className="text-sm font-medium text-gray-700">Категории</label>
+                        <button 
+                            type="button" 
+                            onClick={toggleSelectAll}
+                            className="text-xs text-blue-600 hover:text-blue-800"
+                        >
+                            {selectedCategoryIds.length === allCategories.length ? 'Снять всё' : 'Выбрать всё'}
+                        </button>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md p-3 space-y-2">
+                        {allCategories.length > 0 ? allCategories.map(cat => (
+                            <div 
+                                key={cat.id} 
+                                className={`flex items-center p-3 rounded-md cursor-pointer transition-colors ${
+                                    selectedCategoryIds.includes(cat.id) 
+                                        ? 'bg-blue-50 border border-blue-200' 
+                                        : 'hover:bg-gray-50 border border-transparent'
+                                }`}
+                                onClick={() => handleCategoryChange(cat.id)}
+                            >
+                                <input
+                                    type="checkbox"
+                                    id={`cat-edit-${cat.id}`}
+                                    checked={selectedCategoryIds.includes(cat.id)}
+                                    onChange={() => {}} // Handling in the onClick of the parent div
+                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded mr-3"
+                                    style={{ cursor: 'pointer' }}
+                                />
+                                <label 
+                                    htmlFor={`cat-edit-${cat.id}`} 
+                                    className="text-sm text-gray-700 cursor-pointer w-full"
+                                >
+                                    {cat.name}
+                                </label>
+                            </div>
+                        )) : <p className="text-sm text-gray-500 p-2">Категории не загружены</p>}
+                    </div>
+                    {selectedCategoryIds.length > 0 && (
+                        <div className="mt-3 text-xs text-gray-500 px-2">
+                            Выбрано категорий: {selectedCategoryIds.length} из {allCategories.length}
+                        </div>
+                    )}
+                </div>
 
-                {/* ... existing form buttons ... */}
+                {/* ...existing form buttons... */}
                  <div className="flex justify-end space-x-2 pt-4" style={{ padding: "5px" }}>
                     <button
                         type="button"
@@ -246,6 +291,17 @@ const CreateUserModal = ({ allCategories, onClose, onSave, isLoading }) => {
         );
     };
 
+    // Add a "select all" toggle function
+    const toggleSelectAll = () => {
+        if (selectedCategoryIds.length === allCategories.length) {
+            // If all selected, deselect all
+            setSelectedCategoryIds([]);
+        } else {
+            // Otherwise select all
+            setSelectedCategoryIds(allCategories.map(cat => cat.id));
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -257,11 +313,12 @@ const CreateUserModal = ({ allCategories, onClose, onSave, isLoading }) => {
             setError('Телефон не может быть пустым.');
             return;
         }
-        // Password might be optional, add validation if required
-        // if (!formData.password) {
-        //     setError('Пароль не может быть пустым.');
-        //     return;
-        // }
+        
+        // Add validation for categories if needed
+        if (selectedCategoryIds.length === 0) {
+            setError('Выберите хотя бы одну категорию.');
+            return;
+        }
 
         const userData = {
             ...formData,
@@ -335,26 +392,54 @@ const CreateUserModal = ({ allCategories, onClose, onSave, isLoading }) => {
                         // required // Make password required if necessary
                     />
                 </div>
-                 {/* Category Selection */}
-                 <div style={{ padding: "5px" }}>
-                     <label className="text-sm font-medium text-gray-700 block mb-1" style={{ padding: "5px" }}>Категории</label>
-                     <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2 space-y-1">
-                         {allCategories.length > 0 ? allCategories.map(cat => (
-                             <div key={cat.id} className="flex items-center">
-                                 <input
-                                     type="checkbox"
-                                     id={`cat-create-${cat.id}`}
-                                     checked={selectedCategoryIds.includes(cat.id)}
-                                     onChange={() => handleCategoryChange(cat.id)}
-                                     className="h-4 w-4 text-blue-600 border-gray-300 rounded mr-2"
-                                 />
-                                 <label htmlFor={`cat-create-${cat.id}`} className="text-sm text-gray-700">{cat.name}</label>
-                             </div>
-                         )) : <p className="text-sm text-gray-500">Категории не загружены</p>}
-                     </div>
-                 </div>
+                 {/* Enhanced Category Selection */}
+                 <div style={{ padding: "10px" }}>
+                    <div className="flex justify-between items-center mb-2" style={{ padding: "5px" }}>
+                        <label className="text-sm font-medium text-gray-700">Категории</label>
+                        <button 
+                            type="button" 
+                            onClick={toggleSelectAll}
+                            className="text-xs text-blue-600 hover:text-blue-800"
+                        >
+                            {selectedCategoryIds.length === allCategories.length ? 'Снять всё' : 'Выбрать всё'}
+                        </button>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md p-3 space-y-2">
+                        {allCategories.length > 0 ? allCategories.map(cat => (
+                            <div 
+                                key={cat.id} 
+                                className={`flex items-center p-3 rounded-md cursor-pointer transition-colors ${
+                                    selectedCategoryIds.includes(cat.id) 
+                                        ? 'bg-blue-50 border border-blue-200' 
+                                        : 'hover:bg-gray-50 border border-transparent'
+                                }`}
+                                onClick={() => handleCategoryChange(cat.id)}
+                            >
+                                <input
+                                    type="checkbox"
+                                    id={`cat-create-${cat.id}`}
+                                    checked={selectedCategoryIds.includes(cat.id)}
+                                    onChange={() => {}} // Handling in the onClick of the parent div
+                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded mr-3"
+                                    style={{ cursor: 'pointer' }}
+                                />
+                                <label 
+                                    htmlFor={`cat-create-${cat.id}`} 
+                                    className="text-sm text-gray-700 cursor-pointer w-full"
+                                >
+                                    {cat.name}
+                                </label>
+                            </div>
+                        )) : <p className="text-sm text-gray-500 p-2">Категории не загружены</p>}
+                    </div>
+                    {selectedCategoryIds.length > 0 && (
+                        <div className="mt-3 text-xs text-gray-500 px-2">
+                            Выбрано категорий: {selectedCategoryIds.length} из {allCategories.length}
+                        </div>
+                    )}
+                </div>
 
-                {/* ... existing form buttons ... */}
+                {/* ...existing form buttons... */}
                  <div className="flex justify-end pt-4" style={{ padding: "5px", gap: "7px" }}>
                     <button type="button" onClick={onClose} disabled={isLoading} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm transition-colors shadow-sm border border-gray-300" style={{ padding: "8px 16px" }}>Отмена</button>
                     <button type="submit" disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-sm disabled:opacity-50 transition-colors shadow-sm border border-transparent" style={{ padding: "8px 16px" }}>
@@ -389,7 +474,6 @@ const UserPage = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [isCreatingUser, setIsCreatingUser] = useState(false);
     const [deletingUserId, setDeletingUserId] = useState(null);
-
 
     const fetchUsers = async () => {
         // ... (existing fetchUsers logic is fine) ...
@@ -626,6 +710,12 @@ const UserPage = () => {
         await createUser(formData); // No need for intermediate function
     };
 
+    // Format categories for display
+    const formatCategories = (categories) => {
+        if (!categories || categories.length === 0) return 'Нет категорий';
+        return categories.map(cat => cat.name).join(', ');
+    };
+
     return (
         <div className="p-6 bg-gray-50 min-h-screen" style={{ padding: "5px" }}>
             <h1 className="text-2xl font-semibold text-gray-900 mb-6" style={{ padding: "5px" }}>Пользователи</h1>
@@ -737,11 +827,9 @@ const UserPage = () => {
                                                 {user.status}
                                             </span>
                                         </td>
-                                         {/* Categories cell */}
-                                         <td className="table-cell px-6 py-4 text-sm text-gray-500" style={{ padding: "12px", whiteSpace: 'normal' }}> {/* Allow wrapping */}
-                                            {user.categories && user.categories.length > 0 
-                                                ? user.categories.map(cat => cat.name).join(', ') 
-                                                : 'Нет категорий'}
+                                         {/* Enhanced Categories cell */}
+                                         <td className="table-cell px-6 py-4 text-sm text-gray-500" style={{ padding: "12px", whiteSpace: 'normal' }}>
+                                            {formatCategories(user.categories)}
                                         </td>
                                         {/* Key cell */}
                                         <td className="table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500" style={{ padding: "12px" }}>
