@@ -10,7 +10,7 @@ const Sidebar = () => {
     <aside className="sidebar-container w-56 bg-white p-5 shadow-md flex-shrink-0">
       <div className="flex items-center mb-10">
         <img
-          src="/src/img/aitu-logo.png"
+          src="../../assets/logo.png"
           alt="AITU Logo"
           className="h-9 w-9 mr-2"
         />
