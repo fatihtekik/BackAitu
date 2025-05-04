@@ -17,6 +17,7 @@ export default defineConfig({
   },
   server: {
     host: true,
+    allowedHosts: ['backaitu-1.onrender.com'],
     port: 3000
   }
 })
