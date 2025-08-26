@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/HomePage.css';
-import Modal from './Modal';
+import { API_URL as BASE } from "../config";
+import './EditKeysPage.css';
 
 const EditKeyModal = ({ keys, allCategories, onClose, onSave, isLoading }) => {
     const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
@@ -46,13 +46,10 @@ const EditKeyModal = ({ keys, allCategories, onClose, onSave, isLoading }) => {
         );
     };
 
-    // Add a "select all" toggle function
     const toggleSelectAll = () => {
         if (selectedCategoryIds.length === allCategories.length) {
-            // If all selected, deselect all
             setSelectedCategoryIds([]);
         } else {
-            // Otherwise select all
             setSelectedCategoryIds(allCategories.map(cat => cat.id));
         }
     };
@@ -62,11 +59,9 @@ const EditKeyModal = ({ keys, allCategories, onClose, onSave, isLoading }) => {
         setError('');
         try {
             if (isBulkEdit) {
-                // Bulk update mode
                 const keyIds = keys.map(key => key.id);
                 await onSave(keyIds, { category_ids: selectedCategoryIds, bulkEdit: true });
             } else if (singleKey) {
-                // Single key update mode
                 await onSave(singleKey.id, { category_ids: selectedCategoryIds });
             }
         } catch (err) {
@@ -74,476 +69,525 @@ const EditKeyModal = ({ keys, allCategories, onClose, onSave, isLoading }) => {
         }
     };
 
-    // Ensure we have a valid key or keys before rendering
     if ((!isBulkEdit && !singleKey) || (isBulkEdit && (!keys || keys.length === 0))) {
         return null;
     }
 
     return (
-        <Modal onClose={onClose}>
-            <div className="key-modal-header" style={{ padding: "5px" }}>
-                <h3 className="text-lg font-semibold text-gray-900" style={{ padding: "5px" }}>
-                    {isBulkEdit 
-                        ? `Редактировать категории для ${keys.length} ключей` 
-                        : `Редактировать категории ключа: ${singleKey.key_name}`
-                    }
-                </h3>
-                <button 
-                    className="p-1 rounded-full hover:bg-gray-100"
-                    onClick={onClose}
-                    style={{ padding: "5px" }}
-                >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            <form onSubmit={handleSubmit} className="mt-4 space-y-4" style={{ padding: "5px" }}>
-                {error && (
-                    <p className="text-red-500 text-sm p-2 bg-red-50 rounded" style={{ padding: "5px" }}>
-                        {error}
-                    </p>
-                )}
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-content edit-key-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <div className="header-info">
+                        <h3>
+                            {isBulkEdit 
+                                ? `Редактировать категории` 
+                                : `Редактировать ключ`
+                            }
+                        </h3>
+                        <p>
+                            {isBulkEdit 
+                                ? `${keys.length} выбранных ключей` 
+                                : singleKey.key_name
+                            }
+                        </p>
+                    </div>
+                    <button className="modal-close-btn" onClick={onClose}>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
                 
-                {/* Enhanced Category Selection with better spacing */}
-                <div style={{ padding: "10px" }}>
-                    <div className="flex justify-between items-center mb-2" style={{ padding: "5px" }}>
-                        <label className="text-sm font-medium text-gray-700">Категории</label>
-                        <button 
-                            type="button" 
-                            onClick={toggleSelectAll}
-                            className="text-xs text-blue-600 hover:text-blue-800"
+                <form onSubmit={handleSubmit} className="modal-form">
+                    {error && (
+                        <div className="error-message">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                            </svg>
+                            {error}
+                        </div>
+                    )}
+                    
+                    {isBulkEdit && (
+                        <div className="bulk-edit-info">
+                            <div className="info-icon">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4>Групповое редактирование</h4>
+                                <p>Изменения будут применены ко всем выбранным ключам. Отмеченные категории - общие для всех ключей.</p>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <div className="categories-section">
+                        <div className="section-header">
+                            <label className="section-title">Категории доступа</label>
+                            <button
+                                type="button"
+                                onClick={toggleSelectAll}
+                                className="btn btn-ghost btn-sm"
+                            >
+                                {selectedCategoryIds.length === allCategories.length ? 'Снять все' : 'Выбрать все'}
+                            </button>
+                        </div>
+                        
+                        <div className="categories-grid">
+                            {allCategories.map((category, index) => {
+                                const colors = [
+                                    { bg: '#e3f2fd', border: '#2196f3', text: '#1976d2' },
+                                    { bg: '#f3e5f5', border: '#9c27b0', text: '#7b1fa2' },
+                                    { bg: '#e8f5e8', border: '#4caf50', text: '#388e3c' },
+                                    { bg: '#fff3e0', border: '#ff9800', text: '#f57c00' },
+                                    { bg: '#fce4ec', border: '#e91e63', text: '#c2185b' }
+                                ];
+                                const colorScheme = colors[index % colors.length];
+                                
+                                return (
+                                    <label key={category.id} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        padding: '12px',
+                                        margin: '8px 0',
+                                        border: `2px solid ${colorScheme.border}`,
+                                        borderRadius: '8px',
+                                        backgroundColor: colorScheme.bg,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.transform = 'translateY(-2px)';
+                                        e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = 'translateY(0)';
+                                        e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                                    }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedCategoryIds.includes(category.id)}
+                                            onChange={() => handleCategoryChange(category.id)}
+                                            style={{
+                                                marginRight: '12px',
+                                                width: '18px',
+                                                height: '18px'
+                                            }}
+                                        />
+                                        <div style={{
+                                            marginRight: '8px',
+                                            width: '20px',
+                                            height: '20px',
+                                            color: colorScheme.text
+                                        }}>
+                                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+                                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                            </svg>
+                                        </div>
+                                        <span style={{
+                                            fontSize: '16px',
+                                            color: colorScheme.text,
+                                            fontWeight: '600',
+                                            fontFamily: 'system-ui, -apple-system, sans-serif'
+                                        }}>
+                                            {category.name}
+                                        </span>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                        
+                        {allCategories.length === 0 && (
+                            <div className="empty-categories">
+                                <div className="empty-icon">📝</div>
+                                <p>Категории не найдены</p>
+                                <span>Создайте категории в разделе "Категории пользователей"</span>
+                            </div>
+                        )}
+                        
+                        <div className="selection-summary">
+                            Выбрано категорий: <strong>{selectedCategoryIds.length}</strong> из {allCategories.length}
+                        </div>
+                    </div>
+                    
+                    <div className="modal-actions">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="btn btn-secondary"
+                            disabled={isLoading}
                         >
-                            {selectedCategoryIds.length === allCategories.length ? 'Снять всё' : 'Выбрать всё'}
+                            Отмена
+                        </button>
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={isLoading}
+                        >
+                            {isLoading ? 'Сохранение...' : 'Сохранить изменения'}
                         </button>
                     </div>
-                    <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md p-3 space-y-2">
-                        {allCategories.length > 0 ? allCategories.map(cat => (
-                            <div 
-                                key={cat.id} 
-                                className={`flex items-center p-3 rounded-md cursor-pointer transition-colors ${
-                                    selectedCategoryIds.includes(cat.id) 
-                                        ? 'bg-blue-50 border border-blue-200' 
-                                        : 'hover:bg-gray-50 border border-transparent'
-                                }`}
-                                onClick={() => handleCategoryChange(cat.id)}
-                            >
-                                <input
-                                    type="checkbox"
-                                    id={`cat-key-${cat.id}`}
-                                    checked={selectedCategoryIds.includes(cat.id)}
-                                    onChange={() => {}} // Handling in the onClick of the parent div
-                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded mr-3"
-                                    style={{ cursor: 'pointer' }}
-                                />
-                                <label 
-                                    htmlFor={`cat-key-${cat.id}`} 
-                                    className="text-sm text-gray-700 cursor-pointer w-full"
-                                >
-                                    {cat.name}
-                                </label>
-                            </div>
-                        )) : <p className="text-sm text-gray-500 p-2">Категории не загружены</p>}
-                    </div>
-                    <div className="mt-3 text-xs text-gray-500 px-2">
-                        Выбрано категорий: {selectedCategoryIds.length} из {allCategories.length}
-                    </div>
-                </div>
-
-                <div className="flex justify-end space-x-2 pt-4" style={{ padding: "5px" }}>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm transition-colors shadow-sm border border-gray-300"
-                        disabled={isLoading}
-                        style={{ padding: "8px 16px" }}
-                    >
-                        Отмена
-                    </button>
-                    <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-sm disabled:opacity-50 transition-colors shadow-sm border border-transparent"
-                        disabled={isLoading}
-                        style={{ padding: "8px 16px" }}
-                    >
-                        {isLoading ? 'Сохранение...' : 'Сохранить'}
-                    </button>
-                </div>
-            </form>
-        </Modal>
+                </form>
+            </div>
+        </div>
     );
 };
 
-const EditKeysPage = () => {
+function EditKeysPage() {
     const [keys, setKeys] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [allCategories, setAllCategories] = useState([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
-    const API_URL = "https://backaitu.onrender.com";
-
-    // States for keys selection
-    const [selectedKeys, setSelectedKeys] = useState([]);
-    const [selectAll, setSelectAll] = useState(false);
-
-    // Modal states
-    const [showEditModal, setShowEditModal] = useState(false);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [selectedKeys, setSelectedKeys] = useState(new Set());
     const [editingKey, setEditingKey] = useState(null);
-    const [isUpdatingKey, setIsUpdatingKey] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('all');
+    const [isLoading, setIsLoading] = useState(false);
 
-    // Fetch keys with categories
-    const fetchKeys = async () => {
-        setIsLoading(true);
-        setError(null);
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
         try {
-            const response = await fetch(`${API_URL}/keys-with-categories`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+            setLoading(true);
+            const [keysResponse, categoriesResponse] = await Promise.all([
+                fetch(`${BASE}/keys`),
+                fetch(`${BASE}/categories`)
+            ]);
+
+            if (!keysResponse.ok || !categoriesResponse.ok) {
+                throw new Error('Ошибка загрузки данных');
             }
-            const data = await response.json();
-            if (data.status === "success") {
-                // Ensure categories are included and are arrays
-                const keysWithCategories = data.keys.map(k => {
-                    // Set default "user" category if none exists
-                    const categories = k.categories || [];
-                    const hasUserCategory = categories.some(cat => cat.name === "user");
-                    if (categories.length === 0 && !hasUserCategory) {
-                        // Add "user" category by default (this will be handled on the backend)
-                        // For display purposes, we'll show it here
-                        categories.push({ id: -1, name: "user" });
-                    }
-                    return { ...k, categories };
-                });
-                setKeys(keysWithCategories || []);
-            } else {
-                throw new Error(data.message || "Failed to fetch keys");
+
+            const keysData = await keysResponse.json();
+            const categoriesData = await categoriesResponse.json();
+
+            // Извлекаем массивы из ответа сервера
+            let keys = keysData;
+            if (keysData && typeof keysData === 'object' && !Array.isArray(keysData)) {
+                keys = keysData.keys || keysData.data || keysData;
             }
+            
+            let categories = categoriesData;
+            if (categoriesData && typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
+                categories = categoriesData.categories || categoriesData.data || categoriesData;
+            }
+
+            setKeys(Array.isArray(keys) ? keys : []);
+            setCategories(Array.isArray(categories) ? categories : []);
         } catch (err) {
-            console.error("Error fetching keys:", err);
-            setError("Не удалось загрузить список ключей: " + err.message);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSaveKey = async (keyId, keyData) => {
+        try {
+            setIsLoading(true);
+            
+            if (keyData.bulkEdit) {
+                // Bulk update
+                const response = await fetch(`${BASE}/keys/bulk-update`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        key_ids: keyId, // Actually an array in bulk mode
+                        category_ids: keyData.category_ids
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка массового обновления ключей');
+                }
+            } else {
+                // Single update
+                const response = await fetch(`${BASE}/keys/${keyId}/categories`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(keyData),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка обновления ключа');
+                }
+            }
+
+            await fetchData();
+            setEditingKey(null);
+            setSelectedKeys(new Set());
+        } catch (err) {
+            throw new Error(err.message);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Fetch all categories
-    const fetchAllCategories = async () => {
-        try {
-            const response = await fetch(`${API_URL}/categories`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (data.status === "success") {
-                // Check if "user" category exists
-                const userCategory = data.categories.find(cat => cat.name === "user");
-                let categoriesList = data.categories || [];
-                
-                // If no "user" category exists, we'll consider adding it
-                if (!userCategory) {
-                    console.log("User category not found, may need to create it");
-                }
-                
-                setAllCategories(categoriesList);
-            } else {
-                console.error("Failed to fetch categories:", data.message);
-            }
-        } catch (err) {
-            console.error("Error fetching all categories:", err);
-            // Optionally set an error state here
-        }
-    };
-
-    useEffect(() => {
-        fetchKeys();
-        fetchAllCategories();
-    }, []);
-
-    // Handle key selection
-    const toggleKeySelection = (keyId) => {
+    const handleSelectKey = (keyId) => {
         setSelectedKeys(prev => {
-            if (prev.includes(keyId)) {
-                return prev.filter(id => id !== keyId);
+            const newSet = new Set(prev);
+            if (newSet.has(keyId)) {
+                newSet.delete(keyId);
             } else {
-                return [...prev, keyId];
+                newSet.add(keyId);
             }
+            return newSet;
         });
     };
 
-    // Handle select all keys
-    const toggleSelectAllKeys = () => {
-        if (selectAll || selectedKeys.length === filteredKeys.length) {
-            // Deselect all
-            setSelectedKeys([]);
-            setSelectAll(false);
+    const handleSelectAll = (checked) => {
+        if (checked) {
+            setSelectedKeys(new Set(filteredKeys.map(key => key.id)));
         } else {
-            // Select all filtered keys
-            setSelectedKeys(filteredKeys.map(key => key.id));
-            setSelectAll(true);
+            setSelectedKeys(new Set());
         }
     };
 
-    // Update key categories - now handles both single and bulk operations
-    const updateKeyCategories = async (keyId, categoryData) => {
-        setIsUpdatingKey(true);
-        try {
-            if (categoryData.bulkEdit) {
-                // Bulk update mode
-                const keyIds = Array.isArray(keyId) ? keyId : [keyId];
-                
-                // Make multiple calls to update each key
-                const updatePromises = keyIds.map(id => 
-                    fetch(`${API_URL}/keys/${id}/categories`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ category_ids: categoryData.category_ids })
-                    })
-                );
-                
-                const responses = await Promise.all(updatePromises);
-                
-                // Check if any request failed
-                const failedRequests = responses.filter(res => !res.ok);
-                if (failedRequests.length > 0) {
-                    throw new Error(`${failedRequests.length} из ${responses.length} обновлений не удались`);
-                }
-                
-                setShowEditModal(false);
-                setEditingKey(null);
-                setSelectedKeys([]);
-                setSelectAll(false);
-                await fetchKeys(); // Refresh key list
-            } else {
-                // Single key update mode
-                const response = await fetch(`${API_URL}/keys/${keyId}/categories`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ category_ids: categoryData.category_ids }),
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.message || `HTTP error! Status: ${response.status}`);
-                }
-                
-                if (data.status === "success") {
-                    setShowEditModal(false);
-                    setEditingKey(null);
-                    await fetchKeys(); // Refresh key list
-                } else {
-                    throw new Error(data.message || "Failed to update key categories");
-                }
-            }
-        } catch (err) {
-            console.error("Error updating key categories:", err);
-            throw new Error(err.message || "Произошла ошибка при обновлении категорий.");
-        } finally {
-            setIsUpdatingKey(false);
-        }
+    const handleBulkEdit = () => {
+        const selectedKeysArray = filteredKeys.filter(key => selectedKeys.has(key.id));
+        setEditingKey(selectedKeysArray);
     };
 
-    const handleEditClick = (key) => {
-        setEditingKey(key);
-        setShowEditModal(true);
-    };
-    
-    const handleBulkEditClick = () => {
-        // Get the selected keys objects
-        const keysToEdit = keys.filter(key => selectedKeys.includes(key.id));
-        setEditingKey(keysToEdit);
-        setShowEditModal(true);
-    };
+    const filteredKeys = Array.isArray(keys) ? keys.filter(key => {
+        const nameMatch = key.key_name.toLowerCase().includes(searchTerm.toLowerCase());
+        const categoryMatch = categoryFilter === 'all' || 
+            key.categories?.some(cat => cat.id === parseInt(categoryFilter));
+        return nameMatch && categoryMatch;
+    }) : [];
 
-    const handleCloseModal = () => {
-        setShowEditModal(false);
-        setEditingKey(null);
-        setIsUpdatingKey(false);
-    };
+    const isAllSelected = filteredKeys.length > 0 && selectedKeys.size === filteredKeys.length;
 
-    // Filtering logic
-    const filteredKeys = keys.filter(key => {
-        let matchesSearch = true;
-        let matchesCategory = true;
-        
-        if (searchQuery) {
-            matchesSearch = key.key_name.toLowerCase().includes(searchQuery.toLowerCase());
-        }
-        
-        if (selectedCategoryFilter !== 'all') {
-            matchesCategory = key.categories.some(cat => cat.id === parseInt(selectedCategoryFilter));
-        }
-        
-        return matchesSearch && matchesCategory;
-    });
+    if (loading) {
+        return (
+            <div className="edit-keys-page-modern">
+                <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>Загрузка ключей...</p>
+                </div>
+            </div>
+        );
+    }
 
-    // Format categories for display
-    const formatCategories = (categories) => {
-        if (!categories || categories.length === 0) return 'Нет категорий';
-        return categories.map(cat => cat.name).join(', ');
-    };
+    if (error) {
+        return (
+            <div className="edit-keys-page-modern">
+                <div className="error-container">
+                    <div className="error-icon">⚠️</div>
+                    <h3>Ошибка загрузки</h3>
+                    <p>{error}</p>
+                    <button className="btn btn-primary" onClick={fetchData}>
+                        Попробовать снова
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen" style={{ padding: "5px" }}>
-            <h1 className="text-2xl font-semibold text-gray-900 mb-6" style={{ padding: "5px" }}>
-                Управление категориями ключей
-            </h1>
-            
-            {/* Display general errors */}
-            {error && <p className="mb-4 text-red-600 text-sm p-3 bg-red-100 rounded border border-red-300">{error}</p>}
-            
-            {/* Search, filter controls and bulk action button */}
-            <div className="mb-6 flex flex-wrap gap-4 items-end justify-between" style={{ padding: "5px" }}>
-                <div className="flex flex-wrap gap-4 items-end">
-                    <div className="min-w-[200px]">
-                        <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
-                            Поиск ключа
-                        </label>
+        <div className="edit-keys-page-modern">
+            {/* Header */}
+            <div className="page-header">
+                <div className="header-content">
+                    <div className="header-title">
+                        <h1>Редактор ключей</h1>
+                        <p>Управление категориями доступа к ключам</p>
+                    </div>
+                    <div className="header-actions">
+                        <button 
+                            className="btn btn-primary"
+                            onClick={handleBulkEdit}
+                            disabled={selectedKeys.size === 0}
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            Редактировать ({selectedKeys.size})
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Filters */}
+            <div className="filters-section card">
+                <div className="filters-header">
+                    <h3>Фильтры и поиск</h3>
+                    <div className="filters-info">
+                        Найдено: <strong>{filteredKeys.length}</strong> из {Array.isArray(keys) ? keys.length : 0} ключей
+                    </div>
+                </div>
+                
+                <div className="filters-grid">
+                    <div className="filter-group">
+                        <label className="label">Поиск по названию</label>
                         <input
                             type="text"
-                            id="search"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Введите номер ключа..."
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            className="input"
+                            placeholder="Введите название ключа..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <div className="min-w-[200px]">
-                        <label htmlFor="category-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                            Фильтр по категории
-                        </label>
+                    
+                    <div className="filter-group">
+                        <label className="label">Категория</label>
                         <select
-                            id="category-filter"
-                            value={selectedCategoryFilter}
-                            onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            className="input"
+                            value={categoryFilter}
+                            onChange={(e) => setCategoryFilter(e.target.value)}
                         >
                             <option value="all">Все категории</option>
-                            {allCategories.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            {categories.map(category => (
+                                <option key={category.id} value={category.id}>
+                                    {category.name}
+                                </option>
                             ))}
                         </select>
                     </div>
                 </div>
-                
-                {/* Bulk edit button */}
-                {selectedKeys.length > 0 && (
-                    <button
-                        onClick={handleBulkEditClick}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none text-sm transition-colors shadow-sm border border-transparent"
-                    >
-                        Редактировать выбранные ({selectedKeys.length})
-                    </button>
-                )}
             </div>
 
-            {/* Keys table */}
-            <div className="card bg-white shadow rounded-lg overflow-hidden" style={{ padding: "5px" }}>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+            {/* Keys Table */}
+            <div className="keys-section card">
+                <div className="table-header">
+                    <div className="selection-controls">
+                        <label className="checkbox-container">
+                            <input
+                                type="checkbox"
+                                checked={isAllSelected}
+                                onChange={(e) => handleSelectAll(e.target.checked)}
+                            />
+                            <span className="checkmark"></span>
+                        </label>
+                        <span className="selection-text">
+                            {selectedKeys.size > 0 ? `Выбрано: ${selectedKeys.size}` : 'Выбрать все'}
+                        </span>
+                    </div>
+                    
+                    {selectedKeys.size > 0 && (
+                        <div className="bulk-actions">
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setSelectedKeys(new Set())}
+                            >
+                                Отменить выбор
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <div className="table-container">
+                    <table className="modern-table">
+                        <thead>
                             <tr>
-                                <th scope="col" className="table-header px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px", width: "40px" }}>
-                                    <input
-                                        type="checkbox"
-                                        className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                        checked={selectAll || (filteredKeys.length > 0 && selectedKeys.length === filteredKeys.length)}
-                                        onChange={toggleSelectAllKeys}
-                                        disabled={isLoading || filteredKeys.length === 0}
-                                    />
-                                </th>
-                                <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
-                                    Ключ
-                                </th>
-                                <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
-                                    Статус
-                                </th>
-                                <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
-                                    Категории
-                                </th>
-                                <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
-                                    Действия
-                                </th>
+                                <th className="checkbox-col"></th>
+                                <th>Название ключа</th>
+                                <th>Категории</th>
+                                <th>Пользователи</th>
+                                <th>Действия</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {isLoading ? (
-                                <tr>
-                                    <td colSpan="5" className="text-center py-10">
-                                        <div className="flex justify-center items-center">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                                            <span className="ml-3 text-gray-500">Загрузка...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : filteredKeys.length === 0 ? (
-                                <tr>
-                                    <td colSpan="5" className="text-center py-10 text-gray-500">
-                                        {searchQuery || selectedCategoryFilter !== 'all' 
-                                            ? 'Ключи не найдены по заданным критериям.' 
-                                            : 'Ключи не найдены.'}
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredKeys.map(key => (
-                                    <tr 
-                                        key={key.id}
-                                        className={selectedKeys.includes(key.id) ? "bg-blue-50" : ""}
-                                    >
-                                        <td className="table-cell px-6 py-4 text-center" style={{ padding: "12px" }}>
-                                            <input
-                                                type="checkbox"
-                                                className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                                checked={selectedKeys.includes(key.id)}
-                                                onChange={() => toggleKeySelection(key.id)}
-                                            />
+                        <tbody>
+                            {filteredKeys.map(key => {
+                                const isSelected = selectedKeys.has(key.id);
+                                
+                                return (
+                                    <tr key={key.id} className={isSelected ? 'selected' : ''}>
+                                        <td className="checkbox-col">
+                                            <label className="checkbox-container">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    onChange={() => handleSelectKey(key.id)}
+                                                />
+                                                <span className="checkmark"></span>
+                                            </label>
                                         </td>
-                                        <td className="table-cell px-6 py-4 whitespace-nowrap" style={{ padding: "12px" }}>
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {key.key_name}
+                                        <td>
+                                            <div className="key-info">
+                                                <div className="key-icon">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                                    </svg>
+                                                </div>
+                                                <span className="key-name">{key.key_name}</span>
                                             </div>
                                         </td>
-                                        <td className="table-cell px-6 py-4 whitespace-nowrap" style={{ padding: "12px" }}>
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                key.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                            }`}>
-                                                {key.available ? 'Доступен' : 'Выдан'}
-                                            </span>
+                                        <td>
+                                            <div style={{display: 'flex', flexWrap: 'wrap', gap: '4px'}}>
+                                                {key.categories?.length > 0 ? (
+                                                    key.categories.map(category => (
+                                                        <span key={category.id} style={{
+                                                            background: '#e3f2fd',
+                                                            color: '#1976d2',
+                                                            padding: '2px 8px',
+                                                            borderRadius: '12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: '500'
+                                                        }}>
+                                                            {category.name || category.category || 'Без названия'}
+                                                        </span>
+                                                    ))
+                                                ) : (
+                                                    <span style={{color: '#999', fontSize: '12px'}}>Нет категорий</span>
+                                                )}
+                                            </div>
                                         </td>
-                                        <td className="table-cell px-6 py-4 text-sm text-gray-500" style={{ padding: "12px", whiteSpace: 'normal' }}>
-                                            {formatCategories(key.categories)}
+                                        <td>
+                                            <div className="users-count">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-2.847a4 4 0 11-8 0 4 4 0 018 0z"/>
+                                                </svg>
+                                                {key.user_count || 0}
+                                            </div>
                                         </td>
-                                        <td className="table-cell px-6 py-4 whitespace-nowrap text-sm font-medium" style={{ padding: "12px" }}>
+                                        <td>
                                             <button
-                                                onClick={() => handleEditClick(key)}
-                                                className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors shadow-sm border border-blue-200"
+                                                className="action-btn edit-btn"
+                                                onClick={() => setEditingKey(key)}
+                                                title="Редактировать"
                                             >
-                                                Редактировать
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
                                             </button>
                                         </td>
                                     </tr>
-                                ))
-                            )}
+                                );
+                            })}
                         </tbody>
                     </table>
+                    
+                    {filteredKeys.length === 0 && (
+                        <div className="empty-state">
+                            <div className="empty-icon">🔑</div>
+                            <h3>Ключи не найдены</h3>
+                            <p>Попробуйте изменить параметры фильтрации</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Edit Key Categories Modal */}
-            {showEditModal && editingKey && (
+            {/* Edit Modal */}
+            {editingKey && (
                 <EditKeyModal
                     keys={editingKey}
-                    allCategories={allCategories}
-                    onClose={handleCloseModal}
-                    onSave={updateKeyCategories}
-                    isLoading={isUpdatingKey}
+                    allCategories={categories}
+                    onClose={() => setEditingKey(null)}
+                    onSave={handleSaveKey}
+                    isLoading={isLoading}
                 />
             )}
+
         </div>
     );
-};
+}
 
 export default EditKeysPage;

@@ -7,7 +7,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   
-  const Url = "https://backaitu.onrender.com/";
+  const Url = "http://localhost:5000/";
   
   const navigate = useNavigate();
   const handleSubmit = (e) => {
@@ -48,8 +48,8 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-dark-blue px-4 bg-gradient-to-b from-gray-50 to-gray-100">
-      <div className="w-full max-w-md bg-white rounded-md shadow-2xl p-10 my-8 border border-gray-200">
+    <div className="flex items-center justify-center min-h-screen px-4 bg-gradient-to-b from-[#f7f9fc] to-[#eef3f9]">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-10 my-8 border border-gray-100">
         <div className="mb-12 text-center">
           <img
             className="mx-auto mb-5 w-24 h-24 transition-transform duration-300 hover:scale-105"
@@ -63,7 +63,7 @@ const LoginPage = () => {
             Пожалуйста, войдите, чтобы продолжить
           </p>
         </div>
-        {error && <div className="mb-4 text-center text-red-400 text-sm bg-red-50 p-2 rounded-lg">{error}</div>}
+        {error && <div className="mb-4 text-center text-red-600 text-sm bg-red-50 p-2 rounded-lg border border-red-200">{error}</div>}
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="phone" value="Номер телефона" className="text-sm font-medium text-gray-600" />
@@ -108,7 +108,7 @@ const LoginPage = () => {
           </div>
           <Button
             type="submit"
-            className="w-full mt-4 py-3 px-2 bg-[#242424] hover:bg-[#333333] transition-all duration-300 text-white font-medium text-base rounded-2xl shadow-md hover:shadow-lg"
+            className="w-full mt-4 py-3 px-2 bg-[#1f2937] hover:bg-[#111827] transition-all duration-200 text-white font-medium text-base rounded-2xl shadow-md hover:shadow-lg"
             size="lg"
           >
             Войти

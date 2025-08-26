@@ -1,0 +1,108 @@
+````css
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+:root{
+  --soft-bg:#f7f9fc;
+  --soft-card:#ffffff;
+  --soft-border:#e6eef5;
+  --soft-text:#0f172a;
+  --soft-shadow:0 10px 24px rgba(15,23,42,0.06);
+  --soft-shadow-hover:0 14px 28px rgba(15,23,42,0.09);
+  --soft-radius:14px;
+  --soft-radius-lg:18px;
+  --soft-accent:#3b82f6;
+  --soft-accent-2:#22c55e;
+  --soft-warn:#fbbf24;
+  --soft-danger:#ef4444;
+}
+
+body{
+  /* ...existing code... */
+  background-color: var(--soft-bg);
+}
+
+/* Карточки */
+.card{
+  /* ...existing code... */
+  background-color: var(--soft-card);
+  border:1px solid var(--soft-border);
+  border-radius: var(--soft-radius);
+  box-shadow: var(--soft-shadow);
+  transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease;
+}
+.card:hover{ box-shadow: var(--soft-shadow-hover); transform: translateY(-2px); }
+
+/* Заголовки таблиц/ячейки + hover строк */
+.table-header{ padding:12px !important; background:#f8fafc; color:var(--soft-text); }
+.table-cell{ padding:12px !important; transition: background-color .16s ease; }
+.history-table-container table tbody tr{ transition: background-color .16s ease; }
+.history-table-container table tbody tr:hover{ background-color:#f8fafc; }
+
+/* Модалки */
+.key-modal{
+  /* ...existing code... */
+  background-color: var(--soft-card);
+  border:1px solid var(--soft-border);
+  border-radius: var(--soft-radius-lg);
+  box-shadow: var(--soft-shadow);
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+.key-modal-header{
+  /* ...existing code... */
+  border-bottom:1px solid var(--soft-border);
+}
+
+/* Список ключей в модалке */
+.key-item{
+  /* ...existing code... */
+  border:1px solid var(--soft-border);
+  border-radius: var(--soft-radius);
+  transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+.key-item:hover{ transform: translateY(-2px); box-shadow: var(--soft-shadow); }
+
+/* Кнопки согласования */
+.approval-button{
+  /* ...existing code... */
+  border-radius:9999px;
+  box-shadow:0 2px 6px rgba(15,23,42,.08);
+  transition: background-color .16s ease, box-shadow .16s ease, transform .12s ease;
+}
+.approval-button:hover{ transform: translateY(-1px); box-shadow:0 4px 12px rgba(15,23,42,.12); }
+.approve-button{ background:#86efac; color:#14532d; }
+.approve-button:hover{ background:var(--soft-accent-2); color:#fff; }
+.reject-button{ background:#fecaca; color:#7f1d1d; }
+.reject-button:hover{ background:var(--soft-danger); color:#fff; }
+.hold-button{ background:#fde68a; color:#713f12; }
+.hold-button:hover{ background:var(--soft-warn); color:#111827; }
+.verify-button{ background:#bfdbfe; color:#1e3a8a; }
+.verify-button:hover{ background:var(--soft-accent); color:#fff; }
+
+/* Бейджи статусов */
+.status-badge,.key-history-status{
+  display:inline-flex; align-items:center; padding:.25rem .6rem; border-radius:9999px;
+  font-size:.75rem; font-weight:600; margin-left:12px;
+}
+.badge-approved{ background:#ecfdf5; color:#065f46; }
+.badge-rejected{ background:#fef2f2; color:#7f1d1d; }
+.badge-pending{ background:#f8fafc; color:#334155; }
+.badge-pending-verification{ background:#eff6ff; color:#1d4ed8; }
+.badge-on-hold{ background:#fffbeb; color:#92400e; }
+
+/* Блоки подтверждений */
+.key-approval-item{
+  /* ...existing code... */
+  background:var(--soft-card);
+  border:1px solid var(--soft-border);
+  border-radius: var(--soft-radius);
+  transition: box-shadow .18s ease, transform .18s ease;
+}
+.key-approval-item:hover{ box-shadow: var(--soft-shadow); transform: translateY(-2px); }
+
+/* Служебные */
+.key-item-status-available{ background:#d1fae5; color:#047857; }
+.key-item-status-issued{ background:#fee2e2; color:#b91c1c; }
+
+/* ...existing code... */
+````

@@ -1,18 +1,22 @@
 import React from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import './Layout.css';
 
 const Layout = () => {
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="layout-modern">
       <Sidebar />
-      <div className="main-content flex-1 flex flex-col">
+      <div className="main-content-area">
         <Header />
-        <main className="p-8 flex-grow">
-          <Outlet />
+        <main className="content-wrapper">
+          <div className="content-container">
+            <Outlet />
+          </div>
         </main>
       </div>
+
     </div>
   );
 };

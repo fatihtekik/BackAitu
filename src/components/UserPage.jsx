@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import '../styles/HomePage.css';
+import { API_URL as BASE } from "../config";
+import './UserPage.css';
 import Modal from './Modal';
 
 const EditUserModal = ({ user, allCategories, onClose, onSave, isLoading }) => {
@@ -84,373 +85,360 @@ const EditUserModal = ({ user, allCategories, onClose, onSave, isLoading }) => {
     if (!user) return null;
 
     return (
-        <Modal onClose={onClose}>
-             <div className="key-modal-header" style={{ padding: "5px" }}>
-                <h3 className="text-lg font-semibold text-gray-900" style={{ padding: "5px" }}>Редактировать пользователя</h3>
-                <button 
-                    className="p-1 rounded-full hover:bg-gray-100"
-                    onClick={onClose}
-                    style={{ padding: "5px" }}
-                >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <form onSubmit={handleSubmit} className="mt-4 space-y-4" style={{ padding: "5px" }}>
-                {error && <p className="text-red-500 text-sm p-2 bg-red-50 rounded" style={{ padding: "5px" }}>{error}</p>}
-                <div style={{ padding: "5px" }}>
-                    <label htmlFor="name" className="text-sm font-medium text-gray-700 block mb-1" style={{ padding: "5px" }}>ФИО</label>
-                    <input
-                        type="text"
-                        name="name"
-                        id="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        style={{ padding: "5px" }}
-                        required
-                    />
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h3>Редактировать пользователя</h3>
+                    <button className="modal-close-btn" onClick={onClose}>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
                 </div>
-                 <div style={{ padding: "5px" }}>
-                    <label htmlFor="phone" className="text-sm font-medium text-gray-700 block mb-1" style={{ padding: "5px" }}>Телефон</label>
-                    <input
-                        type="text"
-                        name="phone"
-                        id="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        placeholder="+7 (xxx) xxx‑xx‑xx"
-                        style={{ padding: "5px" }}
-                        required
-                    />
-                </div>
-                <div style={{ padding: "5px" }}>
-                    <label htmlFor="password" className="text-sm font-medium text-gray-700 block mb-1" style={{ padding: "5px" }}>Новый пароль (оставьте пустым, чтобы не менять)</label>
-                    <input
-                        type="password"
-                        name="password"
-                        id="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        placeholder="******"
-                        style={{ padding: "5px" }}
-                    />
-                </div>
-                <div style={{ padding: "5px" }}>
-                    <label className="text-sm font-medium text-gray-700 block mb-1" style={{ padding: "5px" }}>
-                        <input
-                            type="checkbox"
-                            name="admin"
-                            checked={formData.admin}
-                            onChange={handleChange}
-                            className="mr-2"
-                        /> 
-                        Админ
-                    </label>
-                </div>
-                <div style={{ padding: "10px" }}>
-                    <div className="flex justify-between items-center mb-2" style={{ padding: "5px" }}>
-                        <label className="text-sm font-medium text-gray-700">Категории</label>
-                        <button 
-                            type="button" 
-                            onClick={toggleSelectAll}
-                            className="text-xs text-blue-600 hover:text-blue-800"
-                        >
-                            {selectedCategoryIds.length === allCategories.length ? 'Снять всё' : 'Выбрать всё'}
-                        </button>
-                    </div>
-                    <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md p-3 space-y-2">
-                        {allCategories.length > 0 ? allCategories.map(cat => (
-                            <div 
-                                key={cat.id} 
-                                className={`flex items-center p-3 rounded-md cursor-pointer transition-colors ${
-                                    selectedCategoryIds.includes(cat.id) 
-                                        ? 'bg-blue-50 border border-blue-200' 
-                                        : 'hover:bg-gray-50 border border-transparent'
-                                }`}
-                                onClick={() => handleCategoryChange(cat.id)}
-                            >
-                                <input
-                                    type="checkbox"
-                                    id={`cat-edit-${cat.id}`}
-                                    checked={selectedCategoryIds.includes(cat.id)}
-                                    onChange={() => {}}
-                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded mr-3"
-                                    style={{ cursor: 'pointer' }}
-                                />
-                                <label 
-                                    htmlFor={`cat-edit-${cat.id}`} 
-                                    className="text-sm text-gray-700 cursor-pointer w-full"
-                                >
-                                    {cat.name}
-                                </label>
-                            </div>
-                        )) : <p className="text-sm text-gray-500 p-2">Категории не загружены</p>}
-                    </div>
-                    {selectedCategoryIds.length > 0 && (
-                        <div className="mt-3 text-xs text-gray-500 px-2">
-                            Выбрано категорий: {selectedCategoryIds.length} из {allCategories.length}
+                
+                <form onSubmit={handleSubmit} className="modal-form">
+                    {error && (
+                        <div className="error-message">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                            </svg>
+                            {error}
                         </div>
                     )}
-                </div>
-
-                 <div className="flex justify-end space-x-2 pt-4" style={{ padding: "5px" }}>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm transition-colors shadow-sm border border-gray-300"
-                        disabled={isLoading}
-                        style={{ padding: "8px 16px" }}
-                    >
-                        Отмена
-                    </button>
-                    <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-sm disabled:opacity-50 transition-colors shadow-sm border border-transparent"
-                        disabled={isLoading}
-                        style={{ padding: "8px 16px" }}
-                    >
-                        {isLoading ? 'Сохранение...' : 'Сохранить'}
-                    </button>
-                </div>
-            </form>
-        </Modal>
+                    
+                    <div className="form-grid">
+                        <div className="form-group">
+                            <label className="form-label">Имя пользователя</label>
+                            <input
+                                type="text"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
+                                className="form-input"
+                                placeholder="Введите имя..."
+                                required
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Телефон</label>
+                            <input
+                                type="tel"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                className="form-input"
+                                placeholder="+7 (999) 999-99-99"
+                                required
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Новый пароль</label>
+                            <input
+                                type="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                className="form-input"
+                                placeholder="Оставьте пустым, чтобы не изменять"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <div className="checkbox-group">
+                                <input
+                                    type="checkbox"
+                                    id="admin"
+                                    name="admin"
+                                    checked={formData.admin}
+                                    onChange={handleChange}
+                                    className="checkbox-input"
+                                />
+                                <label htmlFor="admin" className="checkbox-label">
+                                    Администратор
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="categories-section">
+                        <div className="categories-header">
+                            <label className="form-label">Категории доступа</label>
+                            <button 
+                                type="button" 
+                                onClick={toggleSelectAll}
+                                className="toggle-all-btn"
+                            >
+                                {selectedCategoryIds.length === allCategories.length ? 'Снять всё' : 'Выбрать всё'}
+                            </button>
+                        </div>
+                        
+                        <div className="categories-grid">
+                            {allCategories.length > 0 ? allCategories.map(cat => (
+                                <div 
+                                    key={cat.id} 
+                                    className={`category-item ${selectedCategoryIds.includes(cat.id) ? 'selected' : ''}`}
+                                    onClick={() => handleCategoryChange(cat.id)}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedCategoryIds.includes(cat.id)}
+                                        onChange={() => {}}
+                                        className="category-checkbox"
+                                    />
+                                    <span className="category-name">{cat.name}</span>
+                                </div>
+                            )) : (
+                                <div className="no-history">Категории не загружены</div>
+                            )}
+                        </div>
+                        
+                        {selectedCategoryIds.length > 0 && (
+                            <div className="selection-summary">
+                                Выбрано категорий: <strong>{selectedCategoryIds.length}</strong> из {allCategories.length}
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="modal-actions">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="btn btn-secondary"
+                            disabled={isLoading}
+                        >
+                            Отмена
+                        </button>
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={isLoading}
+                        >
+                            {isLoading ? 'Сохранение...' : 'Сохранить изменения'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 };
 
   const UserKeyHistoryModal = ({ user, history, isLoading, error, onClose }) => {
       if (!user) return null;
+      
+      const getStatusInfo = (action) => {
+          switch (action?.toLowerCase()) {
+              case 'return':
+              case 'returned':
+                  return { text: 'Сдан', className: 'status-returned' };
+              case 'issue':
+              case 'issued':
+                  return { text: 'Выдан', className: 'status-issued' };
+              case 'request':
+                  return { text: 'Запрошен', className: 'status-requested' };
+              default:
+                  return { text: action || 'Неизвестно', className: 'status-requested' };
+          }
+      };
   
       return (
-          <Modal onClose={onClose}>
-              <div className="key-modal-header" style={{ padding: "12px" }}>
-                  <h3 className="text-lg font-semibold" style={{ padding: "12px" }}>История ключей: {user.name}</h3>
-                  <button 
-                      className="p-1 rounded-full hover:bg-gray-100"
-                      onClick={onClose}
-                      style={{ padding: "12px" }}
-                  >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                  </button>
-              </div>
-              <div className="mt-4 max-h-96 overflow-y-auto" style={{ padding: "12px" }}>
-                  {isLoading ? (
-                      <div className="flex justify-center items-center h-20">
-                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                      </div>
-                  ) : error ? (
-                      <p className="text-red-500 text-center p-2 bg-red-50 rounded">{error}</p>
-                  ) : history && history.length > 0 ? (
-                      <ul className="space-y-3">
-                          {history.map((item) => {
-                              const statusInfo = getStatusInfo(item.action);
-                              return (
-                                  <li key={item.id || item.history_id} className="p-3 bg-gray-50 rounded-md border border-gray-200 flex justify-between items-center text-sm hover:bg-gray-100 transition-colors" style={{ padding: "12px" }}>
-                                      <div>
-                                          <span className="font-medium text-gray-800">{item.key_name}</span>
-                                          <span className={`ml-4 px-2 py-0.5 rounded text-xs ${statusInfo.className}`}>
-                                              {statusInfo.text}
-                                          </span>
+          <div className="modal-overlay" onClick={onClose}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                  <div className="modal-header">
+                      <h3>История ключей: {user.name}</h3>
+                      <button className="modal-close-btn" onClick={onClose}>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                          </svg>
+                      </button>
+                  </div>
+                  
+                  <div className="history-list">
+                      {isLoading ? (
+                          <div className="loading-container">
+                              <div className="loading-spinner"></div>
+                              <p>Загрузка истории...</p>
+                          </div>
+                      ) : error ? (
+                          <div className="error-message">
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                              </svg>
+                              {error}
+                          </div>
+                      ) : history && history.length > 0 ? (
+                          <div>
+                              {history.map((item) => {
+                                  const statusInfo = getStatusInfo(item.action);
+                                  return (
+                                      <div key={item.id || item.history_id} className="history-item">
+                                          <div className="history-content">
+                                              <div className="history-key">{item.key_name}</div>
+                                              <span className={`history-status ${statusInfo.className}`}>
+                                                  {statusInfo.text}
+                                              </span>
+                                          </div>
+                                          <div className="history-time">
+                                              {new Date(item.timestamp).toLocaleString('ru-RU')}
+                                          </div>
                                       </div>
-                                      <span className="text-gray-500">{new Date(item.timestamp).toLocaleString()}</span>
-                                  </li>
-                              );
-                          })}
-                      </ul>
-                  ) : (
-                      <p className="text-gray-500 text-center p-4">История взаимодействий отсутствует.</p>
-                  )}
+                                  );
+                              })}
+                          </div>
+                      ) : (
+                          <div className="no-history">
+                              История взаимодействий отсутствует
+                          </div>
+                      )}
+                  </div>
+                  
+                  <div className="modal-actions">
+                      <button
+                          onClick={onClose}
+                          className="btn btn-primary"
+                      >
+                          Закрыть
+                      </button>
+                  </div>
               </div>
-              <div className="flex justify-end mt-4 pt-2 border-t border-gray-200" style={{ padding: "12px" }}>
-                  <button
-                      onClick={onClose}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm transition-colors shadow-sm border border-transparent"
-                      style={{ padding: "8px 16px" }}
-                  >
-                      Закрыть
-                  </button>
-              </div>
-          </Modal>
+          </div>
       );
   };
-  
-const CreateUserModal = ({ allCategories, onClose, onSave, isLoading }) => {
-    const [formData, setFormData] = useState({ name: '', password: '', phone: '', admin: false });
-    const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
-    const [error, setError] = useState('');
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+// CreateUserModal Component
+const CreateUserModal = ({ allCategories, onClose, onSave, isLoading }) => {
+    const [formData, setFormData] = useState({
+        name: '',
+        phone: '',
+        categories: [],
+        status: 'Active'
+    });
+
+    const handleInputChange = (field, value) => {
         setFormData(prev => ({
             ...prev,
-            [name]: type==='checkbox' ? checked : value
+            [field]: value
         }));
     };
 
-    const handleCategoryChange = (categoryId) => {
-        setSelectedCategoryIds(prev =>
-            prev.includes(categoryId)
-                ? prev.filter(id => id !== categoryId)
-                : [...prev, categoryId]
-        );
+    const handleCategoryChange = (categoryId, checked) => {
+        setFormData(prev => ({
+            ...prev,
+            categories: checked 
+                ? [...prev.categories, categoryId]
+                : prev.categories.filter(id => id !== categoryId)
+        }));
     };
 
-    const toggleSelectAll = () => {
-        if (selectedCategoryIds.length === allCategories.length) {
-            setSelectedCategoryIds([]);
-        } else {
-            setSelectedCategoryIds(allCategories.map(cat => cat.id));
-        }
-    };
-
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setError('');
-        if (!formData.name) {
-            setError('Имя пользователя не может быть пустым.');
-            return;
-        }
-        if (!formData.phone) {
-            setError('Телефон не может быть пустым.');
-            return;
-        }
-        
-        if (selectedCategoryIds.length === 0) {
-            setError('Выберите хотя бы одну категорию.');
-            return;
-        }
-
-        const userData = {
-            ...formData,
-            category_ids: selectedCategoryIds
-        };
-
-        try {
-            await onSave(userData);
-        } catch (err) {
-            setError(err.message || 'Не удалось создать пользователя.');
-        }
+        onSave(formData);
     };
 
     return (
-        <Modal onClose={onClose}>
-             <div className="key-modal-header" style={{ padding: "5px" }}>
-                <h3 className="text-lg font-semibold" style={{ padding: "5px" }}>Новый пользователь</h3>
-                <button className="p-1 rounded-full hover:bg-gray-100" onClick={onClose} style={{ padding: "5px" }}>
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <form onSubmit={handleSubmit} className="mt-4 space-y-4" style={{ padding: "5px" }}>
-                {error && <p className="text-red-500 text-sm p-2 bg-red-50 rounded" style={{ padding: "5px" }}>{error}</p>}
-                <div style={{ padding: "5px" }}>
-                    <label htmlFor="create-name" className="text-sm font-medium text-gray-700 block mb-1" style={{ padding: "5px" }}>ФИО</label>
-                    <input
-                        type="text"
-                        name="name"
-                        id="create-name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        style={{ padding: "8px" }}
-                        required
-                    />
-                </div>
-                <div style={{ padding: "5px" }}>
-                    <label htmlFor="create-phone" className="text-sm font-medium text-gray-700 block mb-1" style={{ padding: "5px" }}>Телефон</label>
-                    <input
-                        type="text"
-                        name="phone"
-                        id="create-phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        style={{ padding: "8px" }}
-                        placeholder="+7 (xxx) xxx‑xx‑xx"
-                        required
-                    />
-                </div>
-                 <div style={{ padding: "5px" }}>
-                    <label htmlFor="create-password" className="text-sm font-medium text-gray-700 block mb-1" style={{ padding: "5px" }}>Пароль</label>
-                    <input
-                        type="password"
-                        name="password"
-                        id="create-password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        style={{ padding: "8px" }}
-                        placeholder="******"
-                    />
-                </div>
-                <div style={{ padding: "5px" }}>
-                    <label className="text-sm font-medium text-gray-700 block mb-1" style={{ padding: "5px" }}>
-                        <input
-                            type="checkbox"
-                            name="admin"
-                            checked={formData.admin}
-                            onChange={handleChange}
-                            className="mr-2"
-                        /> 
-                        Админ
-                    </label>
-                </div>
-                 <div style={{ padding: "10px" }}>
-                    <div className="flex justify-between items-center mb-2" style={{ padding: "5px" }}>
-                        <label className="text-sm font-medium text-gray-700">Категории</label>
-                        <button 
-                            type="button" 
-                            onClick={toggleSelectAll}
-                            className="text-xs text-blue-600 hover:text-blue-800"
-                        >
-                            {selectedCategoryIds.length === allCategories.length ? 'Снять всё' : 'Выбрать всё'}
-                        </button>
-                    </div>
-                    <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md p-3 space-y-2">
-                        {allCategories.length > 0 ? allCategories.map(cat => (
-                            <div 
-                                key={cat.id} 
-                                className={`flex items-center p-3 rounded-md cursor-pointer transition-colors ${
-                                    selectedCategoryIds.includes(cat.id) 
-                                        ? 'bg-blue-50 border border-blue-200' 
-                                        : 'hover:bg-gray-50 border border-transparent'
-                                }`}
-                                onClick={() => handleCategoryChange(cat.id)}
-                            >
-                                <input
-                                    type="checkbox"
-                                    id={`cat-create-${cat.id}`}
-                                    checked={selectedCategoryIds.includes(cat.id)}
-                                    onChange={() => {}}
-                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded mr-3"
-                                    style={{ cursor: 'pointer' }}
-                                />
-                                <label 
-                                    htmlFor={`cat-create-${cat.id}`} 
-                                    className="text-sm text-gray-700 cursor-pointer w-full"
-                                >
-                                    {cat.name}
-                                </label>
-                            </div>
-                        )) : <p className="text-sm text-gray-500 p-2">Категории не загружены</p>}
-                    </div>
-                    {selectedCategoryIds.length > 0 && (
-                        <div className="mt-3 text-xs text-gray-500 px-2">
-                            Выбрано категорий: {selectedCategoryIds.length} из {allCategories.length}
-                        </div>
-                    )}
-                </div>
-
-                 <div className="flex justify-end pt-4" style={{ padding: "5px", gap: "7px" }}>
-                    <button type="button" onClick={onClose} disabled={isLoading} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm transition-colors shadow-sm border border-gray-300" style={{ padding: "8px 16px" }}>Отмена</button>
-                    <button type="submit" disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-sm disabled:opacity-50 transition-colors shadow-sm border border-transparent" style={{ padding: "8px 16px" }}>
-                        {isLoading ? 'Создание...' : 'Создать'}
+        <div className="modal-backdrop">
+            <div className="modal-content large-modal">
+                <div className="modal-header">
+                    <h2>Создать пользователя</h2>
+                    <button 
+                        onClick={onClose}
+                        disabled={isLoading}
+                        className="modal-close-btn"
+                    >
+                        ×
                     </button>
                 </div>
-            </form>
-        </Modal>
+
+                <form onSubmit={handleSubmit} className="modal-body">
+                    <div className="form-grid">
+                        <div className="form-group">
+                            <label className="form-label">ФИО*</label>
+                            <input
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => handleInputChange('name', e.target.value)}
+                                className="form-input"
+                                required
+                                disabled={isLoading}
+                                placeholder="Введите ФИО"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Телефон*</label>
+                            <input
+                                type="tel"
+                                value={formData.phone}
+                                onChange={(e) => handleInputChange('phone', e.target.value)}
+                                className="form-input"
+                                required
+                                disabled={isLoading}
+                                placeholder="+7 (___) ___-__-__"
+                            />
+                        </div>
+
+                        <div className="form-group full-width">
+                            <label className="form-label">Статус</label>
+                            <select
+                                value={formData.status}
+                                onChange={(e) => handleInputChange('status', e.target.value)}
+                                className="form-select"
+                                disabled={isLoading}
+                            >
+                                <option value="Active">Активный</option>
+                                <option value="Admin">Администратор</option>
+                                <option value="Inactive">Неактивный</option>
+                            </select>
+                        </div>
+
+                        {allCategories.length > 0 && (
+                            <div className="form-group full-width">
+                                <label className="form-label">Категории доступа</label>
+                                <div className="categories-grid">
+                                    {allCategories.map(category => (
+                                        <label key={category.id} className="category-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.categories.includes(category.id)}
+                                                onChange={(e) => handleCategoryChange(category.id, e.target.checked)}
+                                                disabled={isLoading}
+                                            />
+                                            <span className="checkbox-label">{category.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </form>
+
+                <div className="modal-footer">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={isLoading}
+                        className="btn-secondary"
+                    >
+                        Отмена
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={isLoading || !formData.name.trim() || !formData.phone.trim()}
+                        className="btn-primary"
+                    >
+                        {isLoading ? (
+                            <>
+                                <div className="spinner"></div>
+                                Создание...
+                            </>
+                        ) : (
+                            'Создать пользователя'
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 };
 
@@ -458,7 +446,7 @@ const UserPage = () => {
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const API_URL= "https://backaitu.onrender.com";
+    const API_URL= BASE;
     
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [allCategories, setAllCategories] = useState([]);
@@ -694,158 +682,222 @@ const UserPage = () => {
         return categories.map(cat => cat.name).join(', ');
     };
 
-    return (
-        <div className="p-6 bg-gray-50 min-h-screen" style={{ padding: "5px" }}>
-            <h1 className="text-2xl font-semibold text-gray-900 mb-6" style={{ padding: "5px" }}>Пользователи</h1>
-            
-             {error && <p className="mb-4 text-red-600 text-sm p-3 bg-red-100 rounded border border-red-300">{error}</p>}
+    if (isLoading) {
+        return (
+            <div className="user-page-modern">
+                <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>Загрузка пользователей...</p>
+                </div>
+            </div>
+        );
+    }
 
-            {selectedUsers.length > 0 && (
-                <p className="mb-4 text-red-700">
-                    Внимание! При удалении выбранных пользователей удалится вся их история ключей,
-                    а выданные ключи будут автоматически возвращены, убедитесь что взятые пользователем ключи возвращены.
-                </p>
+    if (error && !users.length) {
+        return (
+            <div className="user-page-modern">
+                <div className="error-container">
+                    <div className="error-icon">⚠️</div>
+                    <h3>Ошибка загрузки</h3>
+                    <p>{error}</p>
+                    <button className="btn btn-primary" onClick={fetchUsers}>
+                        Попробовать снова
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="user-page-modern">
+            {/* Header */}
+            <div className="page-header">
+                <div className="header-content">
+                    <div className="header-title">
+                        <h1>Управление пользователями</h1>
+                        <p>Создание, редактирование и управление доступом пользователей</p>
+                    </div>
+                    <div className="header-actions">
+                        <button 
+                            className="btn btn-primary"
+                            onClick={handleCreateClick}
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                            Добавить пользователя
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {error && (
+                <div className="error-message">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                    </svg>
+                    {error}
+                </div>
             )}
 
-            <div className="mb-4">
-                <input
-                    type="text"
-                    placeholder="Фильтр по ФИО"
-                    value={nameFilter}
-                    onChange={e => setNameFilter(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded w-full sm:w-1/3"
-                />
+            {/* Search Section */}
+            <div className="search-section card">
+                <div className="search-container">
+                    <svg className="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input
+                        type="text"
+                        placeholder="Поиск по имени пользователя..."
+                        value={nameFilter}
+                        onChange={e => setNameFilter(e.target.value)}
+                        className="search-input"
+                    />
+                </div>
             </div>
 
-             <div className="mb-4 flex justify-between items-center" style={{ padding: "5px" }}>
-                <button
-                    onClick={deleteUser}
-                    disabled={selectedUsers.length === 0 || isLoading || deletingUserId === 'bulk'}
-                    className={`px-4 py-2 ${selectedUsers.length > 0 ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'} rounded-md text-sm transition-colors shadow-sm border border-transparent`}
-                    style={{ padding: "8px 16px" }}
-                >
-                    {deletingUserId === 'bulk' ? 'Удаление...' : `Удалить выбранных (${selectedUsers.length})`}
-                </button>
-                
-                <button
-                    onClick={handleCreateClick}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm transition-colors shadow-sm border border-transparent"
-                    style={{ padding: "8px 16px" }}
-                >
-                    Добавить пользователя
-                </button>
-            </div>
+            {selectedUsers.length > 0 && (
+                <div className="card" style={{marginBottom: '24px', padding: '16px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                        <div>
+                            <p style={{margin: 0, color: '#92400e', fontWeight: '600'}}>
+                                Выбрано пользователей: {selectedUsers.length}
+                            </p>
+                            <p style={{margin: '4px 0 0 0', fontSize: '14px', color: '#92400e'}}>
+                                При удалении пользователей удалится вся их история ключей
+                            </p>
+                        </div>
+                        <button
+                            onClick={deleteUser}
+                            disabled={deletingUserId === 'bulk'}
+                            className="btn btn-danger"
+                        >
+                            {deletingUserId === 'bulk' ? 'Удаление...' : 'Удалить выбранных'}
+                        </button>
+                    </div>
+                </div>
+            )}
 
-
-            <div className="card bg-white shadow rounded-lg overflow-hidden" style={{ padding: "5px" }}>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+            {/* Users Table */}
+            <div className="users-section card">
+                <div className="table-container">
+                    <table className="modern-table">
+                        <thead>
                             <tr>
-                                <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
-                                    <input 
-                                        type="checkbox" 
-                                        className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                        checked={selectedUsers.length > 0 && selectedUsers.length === users.length}
-                                        onChange={handleSelectAll}
-                                        disabled={isLoading || users.length === 0}
-                                    />
+                                <th style={{width: '40px'}}>
+                                    <label className="checkbox-container">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={selectedUsers.length > 0 && selectedUsers.length === filteredUsers.length}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSelectedUsers(filteredUsers.map(u => u.id));
+                                                } else {
+                                                    setSelectedUsers([]);
+                                                }
+                                            }}
+                                            disabled={filteredUsers.length === 0}
+                                        />
+                                        <span className="checkmark"></span>
+                                    </label>
                                 </th>
-                                <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
-                                    Пользователь
-                                </th>
-                                <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
-                                    Статус
-                                </th>
-                                 <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
-                                    Категории
-                                </th>
-                                <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
-                                    Ключ
-                                </th>
-                                <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
-                                    Телефон
-                                </th>
-                                <th scope="col" className="table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ padding: "12px" }}>
-                                    Действия
-                                </th>
+                                <th>Пользователь</th>
+                                <th>Статус</th>
+                                <th>Категории</th>
+                                <th>Телефон</th>
+                                <th>Действия</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {isLoading ? (
-                                <tr>
-                                    <td colSpan="7" className="text-center py-10">
-                                        <div className="flex justify-center items-center">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                                            <span className="ml-3 text-gray-500">Загрузка...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : filteredUsers.length === 0 ? (
-                                <tr>
-                                    <td colSpan="7" className="text-center py-10 text-gray-500">
-                                        {nameFilter ? 'По данному ФИО ничего не найдено' : 'Пользователи не найдены.'}
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredUsers.map(user => (
+                        <tbody>
+                            {filteredUsers.map(user => {
+                                const isSelected = selectedUsers.includes(user.id);
+                                
+                                return (
                                     <tr key={user.id}>
-                                        <td className="table-cell px-6 py-4 whitespace-nowrap" style={{ padding: "12px" }}>
-                                            <input 
-                                                type="checkbox" 
-                                                className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                                checked={selectedUsers.includes(user.id)}
-                                                onChange={(e) => handleSelectUser(user.id, e.target.checked)}
-                                                disabled={deletingUserId === 'bulk'}
-                                            />
+                                        <td>
+                                            <label className="checkbox-container">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    onChange={(e) => handleSelectUser(user.id, e.target.checked)}
+                                                />
+                                                <span className="checkmark"></span>
+                                            </label>
                                         </td>
-                                        <td className="table-cell px-6 py-4 whitespace-nowrap" style={{ padding: "12px" }}>
-                                            <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                        <td>
+                                            <div className="user-info">
+                                                <div className="user-avatar">
+                                                    {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                                                </div>
+                                                <div className="user-details">
+                                                    <div className="user-name">{user.name}</div>
+                                                    <div className="user-phone">{user.phone}</div>
+                                                </div>
+                                            </div>
                                         </td>
-                                        <td className="table-cell px-6 py-4 whitespace-nowrap" style={{ padding: "12px" }}>
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                user.status === 'Active' ? 'bg-green-100 text-green-800' :
-                                                user.status === 'Admin' ? 'bg-blue-100 text-blue-800' :
-                                                'bg-gray-100 text-gray-800'
-                                            }`}>
-                                                {user.status}
+                                        <td>
+                                            {user.admin && (
+                                                <span className="admin-badge">Администратор</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <div className="categories-list">
+                                                {user.categories?.length > 0 ? (
+                                                    user.categories.map(category => (
+                                                        <span key={category.id} className="badge badge-info">
+                                                            {category.name}
+                                                        </span>
+                                                    ))
+                                                ) : (
+                                                    <span className="no-categories">Нет категорий</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span style={{fontSize: '14px', color: '#64748b'}}>
+                                                {user.phone}
                                             </span>
                                         </td>
-                                         <td className="table-cell px-6 py-4 text-sm text-gray-500" style={{ padding: "12px", whiteSpace: 'normal' }}>
-                                            {formatCategories(user.categories)}
-                                        </td>
-                                        <td className="table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500" style={{ padding: "12px" }}>
-                                            {user.key || 'Нет ключа'}
-                                        </td>
-                                        <td className="table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500" style={{ padding: "12px" }}>
-                                            {user.phone}
-                                        </td>
-                                        <td className="table-cell px-6 py-4 whitespace-nowrap text-sm font-medium" style={{ padding: "12px" }}>
-                                            <div className="flex" style={{ gap: "7px" }}>
+                                        <td>
+                                            <div className="actions-cell">
                                                 <button
-                                                    onClick={() => handleEditClick(user)}
-                                                    disabled={deletingUserId === 'bulk'}
-                                                    className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors shadow-sm border border-blue-200"
+                                                    className="action-btn view-btn"
+                                                    onClick={() => handleHistoryClick(user)}
+                                                    title="Просмотр истории"
                                                 >
-                                                    Редактировать
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
                                                 </button>
                                                 <button
-                                                    onClick={() => handleHistoryClick(user)}
-                                                    disabled={deletingUserId === 'bulk'}
-                                                    className="px-3 py-1.5 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors shadow-sm border border-green-200"
+                                                    className="action-btn edit-btn"
+                                                    onClick={() => handleEditClick(user)}
+                                                    title="Редактировать"
                                                 >
-                                                    История
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                    </svg>
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
-                                ))
-                            )}
+                                );
+                            })}
                         </tbody>
                     </table>
+                    
+                    {filteredUsers.length === 0 && (
+                        <div className="empty-state">
+                            <div className="empty-icon">👥</div>
+                            <h3>Пользователи не найдены</h3>
+                            <p>Попробуйте изменить параметры поиска или добавить нового пользователя</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
+            {/* Modals */}
             {showEditModal && editingUser && (
                 <EditUserModal
                     user={editingUser}
@@ -876,6 +928,6 @@ const UserPage = () => {
             )}
         </div>
     );
-}
+};
 
 export default UserPage;

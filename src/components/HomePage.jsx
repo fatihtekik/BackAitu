@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { API_URL as BASE } from "../config";
 import "../styles/HomePage.css";
 import Modal from './Modal';
 
@@ -25,7 +26,7 @@ const HomePage = () => {
   const [corpusFilter, setCorpusFilter] = useState('all'); // State for corpus filter
   const [floorFilter, setFloorFilter] = useState('all'); // State for floor filter
 
-  const API_URL= "https://backaitu.onrender.com";
+  const API_URL= BASE;
 
   const refetchAllData = async () => {
     setIsLoading(true);
@@ -513,24 +514,64 @@ const HomePage = () => {
 
     return (
       <div className="key-history-container mt-6 bg-white p-7 rounded-lg shadow">
-        <h2 className="text-lg font-medium mb-4">История ключей за Сегодня</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-medium">История ключей за Сегодня</h2>
+          <div className="flex gap-3">
+            <button
+              onClick={() => window.location.href = '/keys'}
+              className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+              Редактор ключей
+            </button>
+            <button
+              onClick={() => {
+                // Экспорт данных в CSV
+                const csvData = todaysHistory.map(item => ({
+                  ID: item.id,
+                  Ключ: item.key_name,
+                  Пользователь: item.user_name,
+                  Действие: getStatusInfo(item.action).text,
+                  Время: item.timestamp
+                }));
+                
+                const csvContent = [
+                  Object.keys(csvData[0] || {}).join(','),
+                  ...csvData.map(row => Object.values(row).join(','))
+                ].join('\n');
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `история_ключей_${new Date().toLocaleDateString('ru-RU')}.csv`;
+                link.click();
+              }}
+              className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              Экспорт CSV
+            </button>
+          </div>
+        </div>
         {/* Add Filter Inputs */}
-        <div className="flex space-x-4 mb-6">
+        <div className="filter-container">
            <input
               type="text"
               placeholder="Искать по ФИО"
               value={homeNameFilter}
               onChange={(e) => setHomeNameFilter(e.target.value)}
-              style={miniInputStyle}
-              className="flex-1 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition duration-150 ease-in-out"
+              className="filter-input"
            />
            <input
               type="text"
               placeholder="Искать по ключу"
               value={homeKeyNameFilter}
               onChange={(e) => setHomeKeyNameFilter(e.target.value)}
-              style={miniInputStyle}
-              className="flex-1 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition duration-150 ease-in-out"
+              className="filter-input"
            />
         </div>
         {isHistoryLoading ? (
@@ -542,15 +583,7 @@ const HomePage = () => {
         ) : (
           <div className="history-table-container overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">№</th>
-                  <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ключ</th>
-                  <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Пользователь</th>
-                  <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
-                  <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Время</th>
-                </tr>
-              </thead>
+
               <tbody className="bg-white divide-y divide-gray-200">
                 {todaysHistory.length > 0 ? (
                   todaysHistory.map(item => {
@@ -598,14 +631,6 @@ const HomePage = () => {
           <div className="overflow-x-auto flex-grow flex flex-col">
              <div className="flex-grow">
                 <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                    <tr>
-                    <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ключ</th>
-                    <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Пользователь</th>
-                    <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Время</th>
-                    <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
-                    </tr>
-                </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                     {keyRequests.map(request => (
                     <tr key={request.id}>
@@ -697,7 +722,6 @@ const HomePage = () => {
             </div>
           )}
         </div>
-        {renderKeyRequestsBlock()}
       </div>
       {renderKeyHistoryBlock()}
       <KeysModal />

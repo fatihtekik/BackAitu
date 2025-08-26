@@ -8,6 +8,9 @@ import UserPage from './components/UserPage.jsx';
 import Category from './components/Category.jsx';
 import EditKeysPage from './components/EditKeysPage.jsx';
 
+// Import design system
+import './styles/design-system.css';
+
 function App() {
   const isAuthenticated = true;
   return (
