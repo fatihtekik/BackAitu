@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { API_URL as BASE } from "../config";
 import "../styles/HomePage.css";
 import Modal from './Modal';
+import { parseCustomDate } from '../utils/dateUtils';
 
 const HomePage = () => {
   const [keyStats, setKeyStats] = useState({
@@ -414,7 +415,7 @@ const HomePage = () => {
           <div>
             <h4 className="font-medium">{request.key_name}</h4>
             <p className="text-sm text-gray-600">Пользователь: {request.user_name}</p>
-            <p className="text-sm text-gray-600">Запрос от: {new Date(request.request_time).toLocaleString()}</p>
+            <p className="text-sm text-gray-600">Запрос от: {parseCustomDate(request.request_time).toLocaleString()}</p>
           </div>
           <div className="status-badge badge-pending px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800" style={{ marginLeft: "12px" }}>Ожидает</div>
         </div>
@@ -481,10 +482,7 @@ const HomePage = () => {
         // Date check
         let isToday = false;
         try {
-          const parts = item.timestamp.split(' ');
-          const dateParts = parts[0].split('.');
-          const timeParts = parts[1].split(':');
-          const itemDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1]);
+          const itemDate = parseCustomDate(item.timestamp);
           isToday = itemDate >= todayStart;
         } catch (e) {
           console.error("Error parsing history timestamp:", item.timestamp, e);
@@ -636,7 +634,7 @@ const HomePage = () => {
                     <tr key={request.id}>
                         <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{request.key_name}</td>
                         <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{request.user_name}</td>
-                        <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{new Date(request.request_time).toLocaleString()}</td>
+                        <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{parseCustomDate(request.request_time).toLocaleString()}</td>
                         <td className="table-cell px-4 py-2 whitespace-nowrap">
                         <button
                             className="button-confirm px-3 py-1 bg-blue-500 text-xs text-white rounded-md hover:bg-blue-600"
@@ -722,6 +720,7 @@ const HomePage = () => {
             </div>
           )}
         </div>
+        {renderKeyRequestsBlock()}
       </div>
       {renderKeyHistoryBlock()}
       <KeysModal />

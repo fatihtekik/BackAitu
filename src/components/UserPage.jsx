@@ -3,6 +3,34 @@ import { API_URL as BASE } from "../config";
 import './UserPage.css';
 import Modal from './Modal';
 
+// Функция для корректного парсинга даты в формате "DD.MM.YYYY HH:MM"
+const parseCustomDate = (dateString) => {
+    if (!dateString) return new Date();
+    try {
+        const parts = dateString.split(' ');
+        if (parts.length !== 2) return new Date();
+        
+        const dateParts = parts[0].split('.');
+        const timeParts = parts[1].split(':');
+        
+        if (dateParts.length !== 3 || timeParts.length !== 2) return new Date();
+        
+        // Создаем дату: new Date(year, month-1, day, hour, minute)
+        const date = new Date(
+            parseInt(dateParts[2], 10), // year
+            parseInt(dateParts[1], 10) - 1, // month (0-indexed)
+            parseInt(dateParts[0], 10), // day
+            parseInt(timeParts[0], 10), // hour
+            parseInt(timeParts[1], 10)  // minute
+        );
+        
+        return isNaN(date.getTime()) ? new Date() : date;
+    } catch (err) {
+        console.error("Error parsing date:", dateString, err);
+        return new Date();
+    }
+};
+
 const EditUserModal = ({ user, allCategories, onClose, onSave, isLoading }) => {
     const [formData, setFormData] = useState({
         name: user?.name || '',
@@ -280,7 +308,7 @@ const EditUserModal = ({ user, allCategories, onClose, onSave, isLoading }) => {
                                               </span>
                                           </div>
                                           <div className="history-time">
-                                              {new Date(item.timestamp).toLocaleString('ru-RU')}
+                                              {parseCustomDate(item.timestamp).toLocaleString('ru-RU')}
                                           </div>
                                       </div>
                                   );
@@ -311,6 +339,7 @@ const CreateUserModal = ({ allCategories, onClose, onSave, isLoading }) => {
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
+        password: '',
         categories: [],
         status: 'Active'
     });
@@ -337,7 +366,7 @@ const CreateUserModal = ({ allCategories, onClose, onSave, isLoading }) => {
     };
 
     return (
-        <div className="modal-backdrop">
+        <div className="modal-overlay">
             <div className="modal-content large-modal">
                 <div className="modal-header">
                     <h2>Создать пользователя</h2>
@@ -376,6 +405,22 @@ const CreateUserModal = ({ allCategories, onClose, onSave, isLoading }) => {
                                 disabled={isLoading}
                                 placeholder="+7 (___) ___-__-__"
                             />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Пароль</label>
+                            <input
+                                type="password"
+                                value={formData.password}
+                                onChange={(e) => handleInputChange('password', e.target.value)}
+                                className="form-input"
+                                disabled={isLoading}
+                                placeholder="Оставьте пустым для автогенерации"
+                                autoComplete="new-password"
+                            />
+                            <small style={{ fontSize: '12px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                                Если не указан, будет сгенерирован автоматически
+                            </small>
                         </div>
 
                         <div className="form-group full-width">
@@ -674,7 +719,15 @@ const UserPage = () => {
     };
 
     const handleCreateUser = async (formData) => {
-        await createUser(formData);
+        // Преобразуем формат данных для API
+        const apiData = {
+            name: formData.name,
+            phone: formData.phone,
+            password: formData.password,
+            category_ids: formData.categories,
+            admin: formData.status === 'Admin'
+        };
+        await createUser(apiData);
     };
 
     const formatCategories = (categories) => {

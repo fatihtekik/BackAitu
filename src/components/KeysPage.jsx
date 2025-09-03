@@ -4,30 +4,58 @@ import { API_URL as BASE } from "../config";
 import * as XLSX from 'xlsx';
 import './KeysPage.css';
 
+// Функция для корректного парсинга даты в формате "DD.MM.YYYY HH:MM"
+const parseCustomDate = (dateString) => {
+    if (!dateString) return new Date();
+    try {
+        const parts = dateString.split(' ');
+        if (parts.length !== 2) return new Date();
+        
+        const dateParts = parts[0].split('.');
+        const timeParts = parts[1].split(':');
+        
+        if (dateParts.length !== 3 || timeParts.length !== 2) return new Date();
+        
+        // Создаем дату: new Date(year, month-1, day, hour, minute)
+        const date = new Date(
+            parseInt(dateParts[2], 10), // year
+            parseInt(dateParts[1], 10) - 1, // month (0-indexed)
+            parseInt(dateParts[0], 10), // day
+            parseInt(timeParts[0], 10), // hour
+            parseInt(timeParts[1], 10)  // minute
+        );
+        
+        return isNaN(date.getTime()) ? new Date() : date;
+    } catch (err) {
+        console.error("Error parsing date:", dateString, err);
+        return new Date();
+    }
+};
+
 const getStatusInfo = (action) => {
     const normalizedAction = action?.toLowerCase();
     switch (normalizedAction) {
         case 'request':
         case 'запрос':
-            return { text: 'Запрос', variant: 'warning', icon: '⏳' };
+            return { text: 'Запрос', variant: 'warning' };
         case 'return':
         case 'returned':
         case 'сдан':
         case 'вернул':
-            return { text: 'Сдан', variant: 'success', icon: '✅' };
+            return { text: 'Сдан', variant: 'success' };
         case 'issue':
         case 'issued':
         case 'approved':
         case 'выдан':
-            return { text: 'Выдан', variant: 'info', icon: '🔑' };
+            return { text: 'Выдан', variant: 'info', };
         case 'denied':
         case 'отказано':
-            return { text: 'Отказано', variant: 'error', icon: '❌' };
+            return { text: 'Отказано', variant: 'error' };
         case 'pending':
         case 'ожидает':
-            return { text: 'Ожидает', variant: 'warning', icon: '⏳' };
+            return { text: 'Ожидает', variant: 'warning' };
         case 'transfer':
-            return { text: 'Передан', variant: 'info', icon: '🔄' };
+            return { text: 'Передан', variant: 'info' };
         default:
             return { text: action || 'Неизвестно', variant: 'neutral', icon: '❓' };
     }
@@ -83,7 +111,7 @@ function KeysPage() {
             
             let dateMatch = true;
             if (startDateFilter || endDateFilter) {
-                const itemDate = new Date(item.timestamp);
+                const itemDate = parseCustomDate(item.timestamp);
                 if (startDateFilter) {
                     const startDate = new Date(startDateFilter);
                     if (itemDate < startDate) dateMatch = false;
@@ -382,10 +410,10 @@ function KeysPage() {
                                             <td className="time-col">
                                                 <div className="time-info">
                                                     <span className="date">
-                                                        {new Date(item.timestamp).toLocaleDateString('ru-RU')}
+                                                        {parseCustomDate(item.timestamp).toLocaleDateString('ru-RU')}
                                                     </span>
                                                     <span className="time">
-                                                        {new Date(item.timestamp).toLocaleTimeString('ru-RU', { 
+                                                        {parseCustomDate(item.timestamp).toLocaleTimeString('ru-RU', { 
                                                             hour: '2-digit', 
                                                             minute: '2-digit' 
                                                         })}
@@ -455,10 +483,10 @@ function KeysPage() {
                                     <div className="card-footer">
                                         <div className="time-info">
                                             <div className="date">
-                                                {new Date(item.timestamp).toLocaleDateString('ru-RU')}
+                                                {parseCustomDate(item.timestamp).toLocaleDateString('ru-RU')}
                                             </div>
                                             <div className="time">
-                                                {new Date(item.timestamp).toLocaleTimeString('ru-RU', { 
+                                                {parseCustomDate(item.timestamp).toLocaleTimeString('ru-RU', { 
                                                     hour: '2-digit', 
                                                     minute: '2-digit' 
                                                 })}
