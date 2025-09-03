@@ -7,7 +7,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   
-  const Url = "http://localhost:5000/";
+  const Url = "http://10.250.0.19:5000/";
   
   const navigate = useNavigate();
   const handleSubmit = (e) => {
