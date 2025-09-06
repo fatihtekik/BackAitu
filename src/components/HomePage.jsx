@@ -23,9 +23,9 @@ const HomePage = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [confirmationStatus, setConfirmationStatus] = useState("");
   const [homeNameFilter, setHomeNameFilter] = useState(''); // Filter for user name on home page history
-  const [homeKeyNameFilter, setHomeKeyNameFilter] = useState(''); // Filter for key name on home page history
-  const [corpusFilter, setCorpusFilter] = useState('all'); // State for corpus filter
-  const [floorFilter, setFloorFilter] = useState('all'); // State for floor filter
+  const [homeKeyNameFilter, setHomeKeyNameFilter] = useState('');
+  const [corpusFilter, setCorpusFilter] = useState('all');
+  const [floorFilter, setFloorFilter] = useState('all');
 
   const API_URL= BASE;
 
@@ -47,6 +47,27 @@ const HomePage = () => {
       setIsLoading(false);
       setIsHistoryLoading(false);
       setIsRequestsLoading(false);
+    }
+  };
+
+  const handleAdminReturnKey = async (keyId) => {
+    if (!window.confirm("Вы уверены, что хотите принудительно вернуть этот ключ?")) return;
+
+    try {
+        const response = await fetch(`${API_URL}/admin/return-key`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key_id: keyId })
+        });
+        const data = await response.json();
+        if (!response.ok || data.status !== 'success') {
+            throw new Error(data.message || "Ошибка возврата ключа");
+        }
+        alert("Ключ успешно возвращен!");
+        refetchAllData(); // Обновляем все данные
+    } catch (err) {
+        console.error("Error returning key as admin:", err);
+        alert(`Ошибка: ${err.message}`);
     }
   };
 
@@ -185,8 +206,6 @@ const HomePage = () => {
 
   const openKeysModal = (type) => {
     setModalType(type);
-    setCorpusFilter('all'); // Reset filters when opening modal
-    setFloorFilter('all'); // Reset filters when opening modal
     setShowModal(true);
   };
 
@@ -343,10 +362,7 @@ const HomePage = () => {
         ) : keys && keys.length > 0 ? (
           <div className="key-list">
             {keys.map(key => (
-              <div
-                key={key.id || key.key_id || Math.random().toString()}
-                className={`key-item ${key.available ? 'key-item-available' : 'key-item-issued'}`}
-              >
+              <div key={key.id || key.key_id} className={`key-item ${key.available ? 'key-item-available' : 'key-item-issued'}`}>
                 <div className="key-item-icon">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
@@ -361,6 +377,17 @@ const HomePage = () => {
                     <div className="key-item-user">У: {key.last_user}</div>
                   )}
                 </div>
+                {!key.available && (
+                  <button
+                    onClick={() => handleAdminReturnKey(key.id)}
+                    className="return-key-btn"
+                    title="Принудительно вернуть ключ"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H3" />
+                    </svg>
+                  </button>
+                )}
               </div>
             ))}
 
@@ -473,8 +500,7 @@ const HomePage = () => {
   };
 
   const renderKeyHistoryBlock = () => {
-    // Filter history for today's entries and apply filters
-    const todaysHistory = useMemo(() => {
+        const todaysHistory = useMemo(() => {
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
 
@@ -512,106 +538,102 @@ const HomePage = () => {
 
     return (
       <div className="key-history-container mt-6 bg-white p-7 rounded-lg shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium">История ключей за Сегодня</h2>
-          <div className="flex gap-3">
-            <button
-              onClick={() => window.location.href = '/keys'}
-              className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-              </svg>
-              Редактор ключей
-            </button>
-            <button
-              onClick={() => {
-                // Экспорт данных в CSV
-                const csvData = todaysHistory.map(item => ({
-                  ID: item.id,
-                  Ключ: item.key_name,
-                  Пользователь: item.user_name,
-                  Действие: getStatusInfo(item.action).text,
-                  Время: item.timestamp
-                }));
-                
-                const csvContent = [
-                  Object.keys(csvData[0] || {}).join(','),
-                  ...csvData.map(row => Object.values(row).join(','))
-                ].join('\n');
-                
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `история_ключей_${new Date().toLocaleDateString('ru-RU')}.csv`;
-                link.click();
-              }}
-              className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-              </svg>
-              Экспорт CSV
-            </button>
-          </div>
-        </div>
-        {/* Add Filter Inputs */}
-        <div className="filter-container">
-           <input
-              type="text"
-              placeholder="Искать по ФИО"
-              value={homeNameFilter}
-              onChange={(e) => setHomeNameFilter(e.target.value)}
-              className="filter-input"
-           />
-           <input
-              type="text"
-              placeholder="Искать по ключу"
-              value={homeKeyNameFilter}
-              onChange={(e) => setHomeKeyNameFilter(e.target.value)}
-              className="filter-input"
-           />
-        </div>
-        {isHistoryLoading ? (
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : error && error.includes("историю") ? (
-          <div className="text-center text-red-500 py-4">Ошибка: {error}</div>
-        ) : (
-          <div className="history-table-container overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-
-              <tbody className="bg-white divide-y divide-gray-200">
-                {todaysHistory.length > 0 ? (
-                  todaysHistory.map(item => {
-                    const statusInfo = getStatusInfo(item.action);
-                    return (
-                      <tr key={item.id}>
-                        <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{item.id}</td>
-                        <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{item.key_name}</td>
-                        <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{item.user_name}</td>
-                        <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">
-                          <span className={`status-badge px-2 py-1 rounded-full text-xs ${statusInfo.className}`}>
-                            {statusInfo.text}
-                          </span>
-                        </td>
-                        <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{item.timestamp}</td>
-                      </tr>
-                    );
-                  })
+                <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+                    <h2 className="text-lg font-medium">История ключей за Сегодня</h2>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                        <button
+                            onClick={() => window.location.href = '/keys'}
+                            className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            Редактор ключей
+                        </button>
+                        <button
+                            onClick={() => {
+                                const csvData = todaysHistory.map(item => ({
+                                    ID: item.id,
+                                    Ключ: item.key_name,
+                                    Пользователь: item.user_name,
+                                    Действие: getStatusInfo(item.action).text,
+                                    Время: item.timestamp
+                                }));
+                                const csvContent = [
+                                    Object.keys(csvData[0] || {}).join(','),
+                                    ...csvData.map(row => Object.values(row).join(','))
+                                ].join('\n');
+                                const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+                                const link = document.createElement('a');
+                                link.href = URL.createObjectURL(blob);
+                                link.download = `история_ключей_${new Date().toLocaleDateString('ru-RU')}.csv`;
+                                link.click();
+                            }}
+                            className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Экспорт CSV
+                        </button>
+                    </div>
+                </div>
+                <div className="filter-container flex gap-4 mb-4">
+                    <input
+                        type="text"
+                        placeholder="Искать по ФИО"
+                        value={homeNameFilter}
+                        onChange={(e) => setHomeNameFilter(e.target.value)}
+                        className="filter-input w-full p-2 border border-gray-300 rounded-md"
+                    />
+                    <input
+                        type="text"
+                        placeholder="Искать по ключу"
+                        value={homeKeyNameFilter}
+                        onChange={(e) => setHomeKeyNameFilter(e.target.value)}
+                        className="filter-input w-full p-2 border border-gray-300 rounded-md"
+                    />
+                </div>
+                {isHistoryLoading ? (
+                    <div className="flex justify-center items-center h-40">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                ) : error && error.includes("историю") ? (
+                    <div className="text-center text-red-500 py-4">Ошибка: {error}</div>
                 ) : (
-                  <tr>
-                    <td colSpan="5" className="text-center text-gray-500 py-4">
-                      {homeNameFilter || homeKeyNameFilter ? 'Нет совпадающих записей за сегодня' : 'Нет записей за сегодня'}
-                    </td>
-                  </tr>
+                    <div className="history-table-container overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {todaysHistory.length > 0 ? (
+                              todaysHistory.map(item => {
+                                const statusInfo = getStatusInfo(item.action);
+                                return (
+                                  <tr key={item.id}>
+                                    <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{item.id}</td>
+                                    <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{item.key_name}</td>
+                                    <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{item.user_name}</td>
+                                    <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">
+                                      <span className={`status-badge px-2 py-1 rounded-full text-xs ${statusInfo.className}`}>
+                                        {statusInfo.text}
+                                      </span>
+                                    </td>
+                                    <td className="table-cell px-4 py-2 whitespace-nowrap text-sm">{item.timestamp}</td>
+                                  </tr>
+                                );
+                              })
+                            ) : (
+                              <tr>
+                                <td colSpan="5" className="text-center text-gray-500 py-4">
+                                  {homeNameFilter || homeKeyNameFilter ? 'Нет совпадающих записей за сегодня' : 'Нет записей за сегодня'}
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                 )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              </div>
     );
   };
   const renderKeyRequestsBlock = () => {
@@ -685,7 +707,7 @@ const HomePage = () => {
                     <div className="font-medium">В наличии</div>
                   </div>
                   <div className="ml-4 stat-icon p-3 bg-yellow-100 rounded-full">
-                    <svg className="h-6 w-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd"></path></svg>
+                    <svg className="h-6 w-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H4v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd"></path></svg>
                   </div>
                 </div>
                 <div

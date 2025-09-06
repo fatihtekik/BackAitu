@@ -420,7 +420,7 @@ function Category() {
                   </div>
                   <div className="stat">
                     <span className="stat-label">Ключей</span>
-                    <span className="stat-value">{category.key_count || 0}</span>
+                    <span className="stat-value">{category.keys_count || 0}</span>
                   </div>
                 </div>
               </div>
@@ -448,7 +448,7 @@ function Category() {
                   <div className="item-details">
                     <h4 className="category-name">{category.name}</h4>
                     <div className="category-meta">
-                      {category.user_count || 0} пользователей • {category.key_count || 0} ключей
+                      {category.user_count || 0} пользователей • {category.keys_count || 0} ключей
                     </div>
                   </div>
                 </div>
