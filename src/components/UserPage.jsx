@@ -77,7 +77,7 @@ const EditUserModal = ({ user, allCategories, onClose, onSave, isLoading }) => {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         setError('');
         if (!formData.name) {
             setError('Имя пользователя не может быть пустым.');
@@ -124,7 +124,7 @@ const EditUserModal = ({ user, allCategories, onClose, onSave, isLoading }) => {
                     </button>
                 </div>
                 
-                <form onSubmit={handleSubmit} className="modal-form">
+                <form className="modal-form">
                     {error && (
                         <div className="error-message">
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -229,24 +229,26 @@ const EditUserModal = ({ user, allCategories, onClose, onSave, isLoading }) => {
                         )}
                     </div>
                     
-                    <div className="modal-actions">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="btn btn-secondary"
-                            disabled={isLoading}
-                        >
-                            Отмена
-                        </button>
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? 'Сохранение...' : 'Сохранить изменения'}
-                        </button>
-                    </div>
                 </form>
+                
+                <div className="modal-actions">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="btn btn-secondary"
+                        disabled={isLoading}
+                    >
+                        Отмена
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleSubmit}
+                        className="btn btn-primary"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? 'Сохранение...' : 'Сохранить изменения'}
+                    </button>
+                </div>
             </div>
         </div>
     );
